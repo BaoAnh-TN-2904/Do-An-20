@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.DoAn20" parent="Theme.Material3.DayNight.NoActionBar" />
+</resources>
