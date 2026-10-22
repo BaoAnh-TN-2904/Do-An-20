@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <path
+        android:fillColor="#EFF6FF"
+        android:pathData="M8,8h48a8,8 0 0,1 8,8v32a8,8 0 0,1 -8,8H8a8,8 0 0,1 -8,-8V16a8,8 0 0,1 8,-8z" />
+    <!-- Table Top -->
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M12,24h40a2,2 0 0,1 2,2v4a2,2 0 0,1 -2,2H12a2,2 0 0,1 -2,-2v-4a2,2 0 0,1 2,-2z" />
+    <!-- Table Legs -->
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M14,32h4v16h-4zM46,32h4v16h-4z" />
+    <!-- Drawer -->
+    <path
+        android:fillColor="#1D4ED8"
+        android:pathData="M34,32h14v10H34z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M39,36h4v2h-4z" />
+</vector>

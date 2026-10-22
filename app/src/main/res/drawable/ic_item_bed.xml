@@ -1,0 +1,25 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <path
+        android:fillColor="#EFF6FF"
+        android:pathData="M8,8h48a8,8 0 0,1 8,8v32a8,8 0 0,1 -8,8H8a8,8 0 0,1 -8,-8V16a8,8 0 0,1 8,-8z" />
+    <!-- Bed Headboard -->
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M12,20h8a2,2 0 0,1 2,2v26h-10z" />
+    <!-- Pillow -->
+    <path
+        android:fillColor="#93C5FD"
+        android:pathData="M24,28h8a2,2 0 0,1 2,2v8a2,2 0 0,1 -2,2h-8a2,2 0 0,1 -2,-2v-8a2,2 0 0,1 2,-2z" />
+    <!-- Mattress & Blanket -->
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M22,34h30a2,2 0 0,1 2,2v8a2,2 0 0,1 -2,2H22z" />
+    <!-- Bed Leg Front -->
+    <path
+        android:fillColor="#1D4ED8"
+        android:pathData="M50,44h4v6h-4z" />
+</vector>

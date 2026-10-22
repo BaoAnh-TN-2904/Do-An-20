@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <path
+        android:fillColor="#F1F5F9"
+        android:pathData="M8,8h48a8,8 0 0,1 8,8v32a8,8 0 0,1 -8,8H8a8,8 0 0,1 -8,-8V16a8,8 0 0,1 8,-8z" />
+    <!-- Backrest -->
+    <path
+        android:fillColor="#475569"
+        android:pathData="M26,16h12a4,4 0 0,1 4,4v14a2,2 0 0,1 -2,2H24a2,2 0 0,1 -2,-2V20a4,4 0 0,1 4,-4z" />
+    <!-- Seat -->
+    <path
+        android:fillColor="#334155"
+        android:pathData="M22,34h20a2,2 0 0,1 2,2v3a2,2 0 0,1 -2,2H22a2,2 0 0,1 -2,-2v-3a2,2 0 0,1 2,-2z" />
+    <!-- Cylinder -->
+    <path
+        android:fillColor="#64748B"
+        android:pathData="M30,41h4v7h-4z" />
+    <!-- Wheel Base -->
+    <path
+        android:strokeColor="#1E293B"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M24,51L32,48L40,51" />
+</vector>

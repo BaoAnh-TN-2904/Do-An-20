@@ -1,0 +1,32 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <path
+        android:fillColor="#ECFDF5"
+        android:pathData="M8,8h48a8,8 0 0,1 8,8v32a8,8 0 0,1 -8,8H8a8,8 0 0,1 -8,-8V16a8,8 0 0,1 8,-8z" />
+    <!-- Fan Cage -->
+    <path
+        android:strokeColor="#10B981"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M32,24A12,12 0 1,0 32,48A12,12 0 0,0 32,24Z" />
+    <!-- Stand -->
+    <path
+        android:fillColor="#059669"
+        android:pathData="M30,36h4v14h-4z" />
+    <!-- Base -->
+    <path
+        android:fillColor="#047857"
+        android:pathData="M24,50h16a2,2 0 0,1 2,2v2H22v-2a2,2 0 0,1 2,-2z" />
+    <!-- Center Hub -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M32,26A3,3 0 1,0 32,32A3,3 0 0,0 32,26Z" />
+    <!-- Blades -->
+    <path
+        android:strokeColor="#059669"
+        android:strokeWidth="2"
+        android:pathData="M32,29L26,22M32,29L38,22M32,29L32,36" />
+</vector>

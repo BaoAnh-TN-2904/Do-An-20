@@ -1,5 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Quản lý các</string>
-    <string name="welcome_title">Quản lý các</string>
-    <string name="welcome_subtitle">Chào mừng bạn đến với ứng dụng.</string>
+    <!-- App & Navigation -->
+    <string name="app_name">Gọn Phòng</string>
+    <string name="nav_home">Trang chủ</string>
+    <string name="nav_items">Vật dụng</string>
+    <string name="nav_statistics">Thống kê</string>
+    <string name="nav_profile">Cá nhân</string>
+
+    <!-- Home Screen -->
+    <string name="greeting_title">Chào Minh Anh!</string>
+    <string name="greeting_subtitle">Phòng gọn gàng, mọi thứ trong tầm tay.</string>
+    <string name="stat_total">Tổng</string>
+    <string name="stat_active">Còn dùng</string>
+    <string name="stat_broken">Hỏng</string>
+    <string name="section_recent_items">Vật dụng gần đây</string>
+    <string name="action_see_all">Xem tất cả</string>
+    <string name="action_add_item">+ Thêm vật dụng</string>
+    <string name="action_add_short">+ Thêm</string>
+
+    <!-- Items Screen -->
+    <string name="items_screen_title">Danh sách vật dụng</string>
+    <string name="items_screen_subtitle">Quản lý và cập nhật tình trạng đồ đạc</string>
+    <string name="search_hint">Tìm kiếm theo tên hoặc danh mục...</string>
+    <string name="filter_all">Tất cả</string>
+    <string name="filter_active">Còn dùng</string>
+    <string name="filter_broken">Hỏng</string>
+    <string name="empty_items_title">Không tìm thấy vật dụng phù hợp</string>
+    <string name="empty_items_subtitle">Hãy thử tìm với từ khóa khác hoặc xóa bộ lọc.</string>
+    <string name="action_reset_filter">Đặt lại bộ lọc</string>
+
+    <!-- Item Status & Categories -->
+    <string name="status_active_text">Còn dùng</string>
+    <string name="status_broken_text">Hỏng</string>
+    <string name="category_furniture">Nội thất</string>
+    <string name="category_electronics">Điện tử</string>
+    <string name="category_study">Đồ dùng học tập</string>
+    <string name="category_other">Khác</string>
+
+    <!-- Add Item Screen -->
+    <string name="add_item_title">Thêm vật dụng mới</string>
+    <string name="add_item_subtitle">Nhập thông tin chi tiết để theo dõi dễ dàng</string>
+    <string name="image_picker_prompt">Thêm ảnh vật dụng</string>
+    <string name="image_picker_hint">Chạm để chọn ảnh từ thư viện</string>
+    <string name="label_item_name">Tên vật dụng *</string>
+    <string name="hint_item_name">Ví dụ: Quạt đứng Senko, Đèn học...</string>
+    <string name="label_category">Loại vật dụng</string>
+    <string name="label_gpio_config">Cấu hình chân / Giao tiếp (IoT)</string>
+    <string name="hint_gpio_config">Ví dụ: GPIO 23, ADC1, PWM Pin 12...</string>
+    <string name="label_price">Giá mua (VNĐ)</string>
+    <string name="hint_price">0đ</string>
+    <string name="label_buy_date">Ngày mua</string>
+    <string name="hint_buy_date">dd/mm/yyyy</string>
+    <string name="label_status">Trạng thái</string>
+    <string name="label_has_switch">Có công tắc điều khiển nguồn</string>
+    <string name="label_notes">Ghi chú</string>
+    <string name="hint_notes">Thêm thông tin bảo hành, vị trí đặt, v.v...</string>
+    <string name="action_save_item">Lưu vật dụng</string>
+    <string name="action_cancel">Hủy</string>
+    <string name="error_name_required">Vui lòng nhập tên vật dụng</string>
+    <string name="msg_item_saved">Đã lưu vật dụng thành công!</string>
+
+    <!-- Detail Screen -->
+    <string name="detail_title">Chi tiết vật dụng</string>
+    <string name="label_switch_control">Công tắc nguồn</string>
+    <string name="switch_on">ĐANG BẬT</string>
+    <string name="switch_off">ĐANG TẮT</string>
+    <string name="action_toggle_status">Đổi trạng thái</string>
+    <string name="action_delete">Xóa vật dụng</string>
+    <string name="dialog_delete_title">Xác nhận xóa</string>
+    <string name="dialog_delete_message">Bạn có chắc chắn muốn xóa vật dụng này khỏi danh sách không?</string>
+    <string name="dialog_confirm_delete">Xóa</string>
+    <string name="msg_item_deleted">Đã xóa vật dụng</string>
+
+    <!-- Statistics Screen -->
+    <string name="statistics_title">Thống kê phòng</string>
+    <string name="statistics_subtitle">Báo cáo đồ đạc và thiết bị sử dụng</string>
+    <string name="stats_active_rate_title">Tỉ lệ đồ đạc hoạt động</string>
+    <string name="stats_active_count">%1$d còn dùng tốt</string>
+    <string name="stats_broken_count">%1$d cần bảo trì / thay thế</string>
+    <string name="stats_breakdown_title">Phân loại danh mục</string>
+    <string name="stats_item_count">%1$d vật dụng</string>
+    <string name="stats_suggestions_title">Gợi ý dọn dẹp &amp; sắp xếp</string>
+    <string name="stats_suggestion_desc">Bạn có các thiết bị hỏng chưa được xử lý. Hãy cân nhắc sửa chữa hoặc thanh lý để phòng luôn ngăn nắp và thoáng đãng.</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_name">Minh Anh</string>
+    <string name="profile_room">Phòng 402 • Căn hộ Harmony</string>
+    <string name="profile_stat_clean">Đã dọn dẹp hôm nay</string>
+    <string name="settings_room">Cài đặt phòng</string>
+    <string name="settings_notifications">Thông báo &amp; Nhắc nhở</string>
+    <string name="settings_notifications_status">Đang bật</string>
+    <string name="settings_backup">Sao lưu dữ liệu</string>
+    <string name="settings_logout">Đăng xuất</string>
+
+    <!-- Notification Sheet -->
+    <string name="notifications_title">Thông báo phòng</string>
+    <string name="notif_1_title">Đèn bàn cần sửa chữa</string>
+    <string name="notif_1_desc">Thiết bị đang báo hỏng, cần kiểm tra lại nguồn điện hoặc bóng đèn.</string>
+    <string name="notif_1_time">10 phút trước</string>
+    <string name="notif_2_title">Quạt điện đang mở</string>
+    <string name="notif_2_desc">Quạt đang hoạt động liên tục trong hơn 4 giờ qua.</string>
+    <string name="notif_2_time">1 giờ trước</string>
+    <string name="action_close">Đóng</string>
+
+    <!-- Accessibility Descriptions -->
+    <string name="cd_home_logo">Logo Gọn Phòng</string>
+    <string name="cd_notifications">Thông báo</string>
+    <string name="cd_back">Quay lại</string>
+    <string name="cd_search">Tìm kiếm</string>
+    <string name="cd_clear_search">Xóa tìm kiếm</string>
+    <string name="cd_item_image">Ảnh vật dụng</string>
+    <string name="cd_switch">Công tắc điều khiển</string>
+    <string name="cd_avatar">Ảnh đại diện người dùng</string>
 </resources>

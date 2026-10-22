@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand / Primary Colors -->
+    <color name="primary_blue">#2563EB</color>
+    <color name="primary_blue_dark">#1D4ED8</color>
+    <color name="primary_blue_light">#DBEAFE</color>
+    <color name="primary_blue_container">#EFF6FF</color>
+    <color name="primary_blue_tint">#F0F6FF</color>
+
+    <!-- Base Surface & Background -->
+    <color name="background">#F8FAFC</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_variant">#F1F5F9</color>
+    <color name="border">#E2E8F0</color>
+    <color name="border_light">#EDF2F7</color>
+
+    <!-- Typography -->
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="text_muted">#94A3B8</color>
+    <color name="text_on_primary">#FFFFFF</color>
+
+    <!-- Status Badges with Dots -->
+    <color name="status_active">#059669</color>
+    <color name="status_active_dot">#10B981</color>
+    <color name="status_active_bg">#ECFDF5</color>
+    <color name="status_active_border">#D1FAE5</color>
+
+    <color name="status_broken">#DC2626</color>
+    <color name="status_broken_dot">#EF4444</color>
+    <color name="status_broken_bg">#FEF2F2</color>
+    <color name="status_broken_border">#FEE2E2</color>
+
+    <!-- Dashboard Stat Cards -->
+    <color name="stat_total_card_bg">#2563EB</color>
+    <color name="stat_total_card_text">#FFFFFF</color>
+
+    <!-- Switch Colors -->
+    <color name="switch_track_on">#2563EB</color>
+    <color name="switch_track_off">#E2E8F0</color>
+    <color name="switch_thumb">#FFFFFF</color>
+
+    <!-- Memory Room Card -->
+    <color name="memory_card_bg">#EFF6FF</color>
+    <color name="memory_card_title">#1E40AF</color>
+    <color name="memory_card_sub">#3B82F6</color>
+
+    <!-- Danger & Accents -->
+    <color name="danger_red">#DC2626</color>
+    <color name="danger_red_bg">#FEF2F2</color>
+    <color name="accent_warning">#F59E0B</color>
+    <color name="accent_purple">#8B5CF6</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+    <color name="ripple">#1A2563EB</color>
+</resources>
