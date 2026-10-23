@@ -55,8 +55,8 @@ class HomeFragment : Fragment() {
             onStatusClick = { item ->
                 viewModel.toggleStatus(item.id)
             },
-            onSwitchToggle = { item, _ ->
-                viewModel.toggleSwitch(item.id)
+            onSwitchToggle = { item, isChecked ->
+                viewModel.setSwitchState(item.id, isChecked)
             }
         )
 
@@ -107,18 +107,26 @@ class HomeFragment : Fragment() {
     private fun observeData() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.allItems.collect { items ->
-                    // Update stats counters
-                    val total = items.size
-                    val active = items.count { it.status == ItemStatus.ACTIVE }
-                    val broken = items.count { it.status == ItemStatus.BROKEN }
+                launch {
+                    viewModel.currentUser.collect { user ->
+                        val name = user?.name ?: "Minh Anh"
+                        binding.tvGreetingTitle.text = "Chào $name!"
+                    }
+                }
+                launch {
+                    viewModel.allItems.collect { items ->
+                        // Update stats counters
+                        val total = items.size
+                        val active = items.count { it.status == ItemStatus.ACTIVE }
+                        val broken = items.count { it.status == ItemStatus.BROKEN }
 
-                    binding.tvStatTotalCount.text = total.toString()
-                    binding.tvStatActiveCount.text = active.toString()
-                    binding.tvStatBrokenCount.text = broken.toString()
+                        binding.tvStatTotalCount.text = total.toString()
+                        binding.tvStatActiveCount.text = active.toString()
+                        binding.tvStatBrokenCount.text = broken.toString()
 
-                    // Update recent items preview (first 4)
-                    recentAdapter.submitList(items.take(4))
+                        // Update recent items preview (first 4)
+                        recentAdapter.submitList(items.take(4))
+                    }
                 }
             }
         }

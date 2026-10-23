@@ -94,16 +94,19 @@
                 android:textStyle="bold"
                 tools:text="● Còn dùng" />
 
-            <!-- Smart Switch -->
+            <!-- Smart Switch (Figma Toggle Bật: #2563EB, Toggle Tắt: #D0D5DD) -->
             <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/switchPower"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
                 android:layout_marginTop="6dp"
                 android:contentDescription="@string/cd_switch"
-                app:thumbTint="@color/white"
+                app:useMaterialThemeColors="false"
+                app:trackDecoration="@null"
                 app:trackDecorationTint="@color/transparent"
-                app:trackTint="@color/primary_blue"
+                app:trackTint="@color/switch_track_selector"
+                app:thumbTint="@color/switch_thumb_selector"
+                app:thumbIcon="@null"
                 tools:checked="true" />
         </LinearLayout>
 

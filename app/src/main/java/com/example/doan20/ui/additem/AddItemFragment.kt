@@ -27,10 +27,18 @@ class AddItemFragment : Fragment() {
 
     private val viewModel: ItemViewModel by activityViewModels()
 
-    private val categories = listOf("Nội thất", "Điện tử", "Đồ dùng học tập", "Khác")
+    private val categories = listOf("Nội thất", "Điện tử", "Đồ dùng cá nhân", "Khác")
     private val statuses = listOf("Còn dùng", "Hỏng")
-    private val imageTypes = listOf("default", "desk", "bed", "fan", "lamp", "chair", "cooker", "hairdryer")
+    private val imageTypes = listOf("default", "desk", "bed", "fan", "lamp", "cooker", "chair", "hairdryer")
     private var selectedImageTypeIndex = 0
+
+    private var editingItemId: String? = null
+    private var editingItem: Item? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        editingItemId = arguments?.getString("itemId")
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -47,6 +55,53 @@ class AddItemFragment : Fragment() {
         setupDatePicker()
         setupImageSelector()
         setupListeners()
+
+        // Check if in edit mode (Figma 05_EditItem)
+        editingItemId?.let { id ->
+            editingItem = viewModel.getItem(id)
+            editingItem?.let { item ->
+                populateItemForEdit(item)
+            }
+        }
+    }
+
+    private fun populateItemForEdit(item: Item) {
+        binding.tvAddTitle.text = getString(R.string.edit_item_title)
+        binding.tvImagePrompt.text = getString(R.string.image_picker_edit_prompt)
+        binding.btnSaveItem.text = getString(R.string.action_save_changes)
+
+        binding.etItemName.setText(item.name)
+        binding.actCategory.setText(item.category, false)
+        binding.actStatus.setText(if (item.status == ItemStatus.BROKEN) "Hỏng" else "Còn dùng", false)
+
+        item.price?.let {
+            if (it > 0) binding.etPrice.setText(it.toString())
+        }
+
+        item.buyDate?.let {
+            binding.etBuyDate.setText(it)
+        }
+
+        item.notes?.let {
+            binding.etNotes.setText(it)
+        }
+
+        // Conditional GPIO
+        if (item.category.equals("Điện tử", ignoreCase = true)) {
+            binding.layoutConditionalGpio.visibility = View.VISIBLE
+            item.pinConfig?.let { cfg ->
+                val parts = cfg.split(" ", limit = 2)
+                if (parts.isNotEmpty()) binding.etPinType.setText(parts[0])
+                if (parts.size > 1) binding.etPinNumber.setText(parts[1])
+            }
+        }
+
+        // Image
+        val idx = imageTypes.indexOf(item.imageType.lowercase())
+        if (idx >= 0) {
+            selectedImageTypeIndex = idx
+        }
+        updateImagePreview()
     }
 
     private fun setupDropdowns() {
@@ -57,7 +112,9 @@ class AddItemFragment : Fragment() {
             categories
         )
         binding.actCategory.setAdapter(categoryAdapter)
-        binding.actCategory.setText(categories[0], false)
+        if (editingItem == null) {
+            binding.actCategory.setText(categories[0], false)
+        }
 
         binding.actCategory.setOnItemClickListener { _, _, position, _ ->
             val selected = categories[position]
@@ -78,7 +135,9 @@ class AddItemFragment : Fragment() {
             statuses
         )
         binding.actStatus.setAdapter(statusAdapter)
-        binding.actStatus.setText(statuses[0], false)
+        if (editingItem == null) {
+            binding.actStatus.setText(statuses[0], false)
+        }
     }
 
     private fun setupDatePicker() {
@@ -105,22 +164,29 @@ class AddItemFragment : Fragment() {
 
     private fun setupImageSelector() {
         binding.btnSelectImage.setOnClickListener {
-            // Cycle through available sample illustrations
             selectedImageTypeIndex = (selectedImageTypeIndex + 1) % imageTypes.size
-            val currentType = imageTypes[selectedImageTypeIndex]
-            val drawableRes = when (currentType) {
-                "desk" -> R.drawable.ic_item_desk
-                "bed" -> R.drawable.ic_item_bed
-                "fan" -> R.drawable.ic_item_fan
-                "lamp" -> R.drawable.ic_item_lamp
-                "chair" -> R.drawable.ic_item_chair
-                "cooker" -> R.drawable.ic_item_cooker
-                "hairdryer" -> R.drawable.ic_item_hairdryer
-                else -> R.drawable.ic_item_default
-            }
-            binding.ivAddPreview.setImageResource(drawableRes)
-            Toast.makeText(requireContext(), "Đã chọn biểu trưng: $currentType", Toast.LENGTH_SHORT).show()
+            updateImagePreview()
+            Toast.makeText(
+                requireContext(),
+                "Đã chọn ảnh mẫu: ${imageTypes[selectedImageTypeIndex]}",
+                Toast.LENGTH_SHORT
+            ).show()
         }
+    }
+
+    private fun updateImagePreview() {
+        val currentType = imageTypes[selectedImageTypeIndex]
+        val drawableRes = when (currentType) {
+            "desk" -> R.drawable.item_desk
+            "bed" -> R.drawable.item_bed
+            "fan" -> R.drawable.item_fan
+            "lamp" -> R.drawable.item_lamp
+            "cooker" -> R.drawable.item_cooker
+            "chair" -> R.drawable.ic_item_chair
+            "hairdryer" -> R.drawable.ic_item_hairdryer
+            else -> R.drawable.ic_camera
+        }
+        binding.ivAddPreview.setImageResource(drawableRes)
     }
 
     private fun setupListeners() {
@@ -155,7 +221,7 @@ class AddItemFragment : Fragment() {
             return
         }
 
-        val category = binding.actCategory.text?.toString()?.trim().ifEmpty { categories[0] }
+        val category = binding.actCategory.text?.toString()?.trim().orEmpty().ifEmpty { categories[0] }
         val statusText = binding.actStatus.text?.toString()?.trim()
         val status = if (statusText == "Hỏng") ItemStatus.BROKEN else ItemStatus.ACTIVE
 
@@ -163,7 +229,7 @@ class AddItemFragment : Fragment() {
         val price = priceStr?.toLongOrNull()
 
         val buyDate = binding.etBuyDate.text?.toString()?.trim().takeIf { !it.isNullOrBlank() }
-        
+
         // GPIO configuration
         val pinType = binding.etPinType.text?.toString()?.trim().orEmpty()
         val pinNumber = binding.etPinNumber.text?.toString()?.trim().orEmpty()
@@ -174,7 +240,6 @@ class AddItemFragment : Fragment() {
         val notes = binding.etNotes.text?.toString()?.trim().takeIf { !it.isNullOrBlank() }
         val hasSwitch = category.equals("Điện tử", ignoreCase = true)
 
-        // Determine image type based on name or category if default
         var chosenImageType = imageTypes[selectedImageTypeIndex]
         if (chosenImageType == "default") {
             val lowerName = name.lowercase()
@@ -183,29 +248,47 @@ class AddItemFragment : Fragment() {
                 lowerName.contains("giường") || lowerName.contains("nệm") -> "bed"
                 lowerName.contains("quạt") -> "fan"
                 lowerName.contains("đèn") -> "lamp"
-                lowerName.contains("ghế") -> "chair"
                 lowerName.contains("nồi") || lowerName.contains("cơm") -> "cooker"
+                lowerName.contains("ghế") -> "chair"
                 lowerName.contains("sấy") -> "hairdryer"
                 else -> "default"
             }
         }
 
-        val newItem = Item(
-            id = UUID.randomUUID().toString(),
-            name = name,
-            category = category,
-            imageType = chosenImageType,
-            status = status,
-            hasSwitch = hasSwitch,
-            isOn = false,
-            price = price,
-            buyDate = buyDate,
-            pinConfig = gpioConfig,
-            notes = notes
-        )
+        if (editingItemId != null && editingItem != null) {
+            // Update existing item (Figma 05_EditItem)
+            val updated = editingItem!!.copy(
+                name = name,
+                category = category,
+                imageType = chosenImageType,
+                status = status,
+                hasSwitch = hasSwitch,
+                price = price,
+                buyDate = buyDate,
+                pinConfig = gpioConfig,
+                notes = notes
+            )
+            viewModel.updateItem(updated)
+            Toast.makeText(requireContext(), R.string.msg_item_updated, Toast.LENGTH_SHORT).show()
+        } else {
+            // Add new item (Figma 04_AddItem)
+            val newItem = Item(
+                id = UUID.randomUUID().toString(),
+                name = name,
+                category = category,
+                imageType = chosenImageType,
+                status = status,
+                hasSwitch = hasSwitch,
+                isOn = false,
+                price = price,
+                buyDate = buyDate,
+                pinConfig = gpioConfig,
+                notes = notes
+            )
+            viewModel.addItem(newItem)
+            Toast.makeText(requireContext(), R.string.msg_item_saved, Toast.LENGTH_SHORT).show()
+        }
 
-        viewModel.addItem(newItem)
-        Toast.makeText(requireContext(), R.string.msg_item_saved, Toast.LENGTH_SHORT).show()
         findNavController().popBackStack()
     }
 

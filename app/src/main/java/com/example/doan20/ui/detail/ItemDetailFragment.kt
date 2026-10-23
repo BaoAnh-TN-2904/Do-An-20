@@ -1,11 +1,17 @@
 package com.example.doan20.ui.detail
 
+import android.app.Dialog
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -17,7 +23,7 @@ import com.example.doan20.data.model.Item
 import com.example.doan20.data.model.ItemStatus
 import com.example.doan20.databinding.FragmentDetailBinding
 import com.example.doan20.ui.viewmodel.ItemViewModel
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
@@ -29,6 +35,7 @@ class ItemDetailFragment : Fragment() {
 
     private val viewModel: ItemViewModel by activityViewModels()
     private var currentItemId: String? = null
+    private var currentItem: Item? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,16 +62,19 @@ class ItemDetailFragment : Fragment() {
             findNavController().popBackStack()
         }
 
+        // Sửa button -> Navigate to Edit Screen (Figma 05_EditItem)
         binding.btnEdit.setOnClickListener {
-            // Toggle item status or edit
             currentItemId?.let { id ->
-                viewModel.toggleStatus(id)
-                Toast.makeText(requireContext(), "Đã cập nhật trạng thái vật dụng", Toast.LENGTH_SHORT).show()
+                findNavController().navigate(
+                    R.id.action_detail_to_edit,
+                    bundleOf("itemId" to id)
+                )
             }
         }
 
+        // Xóa button -> Show custom Figma dialog (Figma 08_DeleteDialog)
         binding.btnDelete.setOnClickListener {
-            confirmDelete()
+            showCustomDeleteDialog()
         }
 
         binding.tvDetailStatus.setOnClickListener {
@@ -74,19 +84,38 @@ class ItemDetailFragment : Fragment() {
         }
     }
 
-    private fun confirmDelete() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.dialog_delete_title)
-            .setMessage(R.string.dialog_delete_message)
-            .setPositiveButton(R.string.dialog_confirm_delete) { _, _ ->
-                currentItemId?.let { id ->
-                    viewModel.deleteItem(id)
-                    Toast.makeText(requireContext(), R.string.msg_item_deleted, Toast.LENGTH_SHORT).show()
-                    findNavController().popBackStack()
-                }
-            }
-            .setNegativeButton(R.string.action_cancel, null)
-            .show()
+    /**
+     * Custom Delete Dialog matching Figma 08_DeleteDialog
+     */
+    private fun showCustomDeleteDialog() {
+        val item = currentItem ?: return
+        val dialog = Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_delete_confirm)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.90).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        val tvMessage = dialog.findViewById<TextView>(R.id.tvDeleteDialogMessage)
+        val btnCancel = dialog.findViewById<MaterialButton>(R.id.btnDialogCancel)
+        val btnConfirm = dialog.findViewById<MaterialButton>(R.id.btnDialogConfirm)
+
+        tvMessage.text = getString(R.string.dialog_delete_message, item.name)
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        btnConfirm.setOnClickListener {
+            dialog.dismiss()
+            viewModel.deleteItem(item.id)
+            Toast.makeText(requireContext(), R.string.msg_item_deleted, Toast.LENGTH_SHORT).show()
+            findNavController().popBackStack()
+        }
+
+        dialog.show()
     }
 
     private fun observeItem() {
@@ -95,6 +124,7 @@ class ItemDetailFragment : Fragment() {
                 viewModel.allItems.collect { items ->
                     val item = items.find { it.id == currentItemId }
                     if (item != null) {
+                        currentItem = item
                         bindItem(item)
                     } else {
                         // Item was deleted
@@ -115,27 +145,37 @@ class ItemDetailFragment : Fragment() {
         // Status Badge with dot matching Figma 03_ItemDetail
         when (item.status) {
             ItemStatus.ACTIVE -> {
-                binding.tvDetailStatus.text = "● Còn dùng"
+                binding.tvDetailStatus.text = "●  Còn dùng"
                 binding.tvDetailStatus.setBackgroundResource(R.drawable.bg_badge_active_pill)
                 binding.tvDetailStatus.setTextColor(ContextCompat.getColor(context, R.color.status_active))
             }
             ItemStatus.BROKEN -> {
-                binding.tvDetailStatus.text = "● Hỏng"
+                binding.tvDetailStatus.text = "●  Hỏng"
                 binding.tvDetailStatus.setBackgroundResource(R.drawable.bg_badge_broken_pill)
                 binding.tvDetailStatus.setTextColor(ContextCompat.getColor(context, R.color.status_broken))
             }
         }
 
-        // Image
+        // Rich Figma PNG / SVG Item Image
         val drawableRes = when (item.imageType.lowercase()) {
-            "desk" -> R.drawable.ic_item_desk
-            "bed" -> R.drawable.ic_item_bed
-            "fan" -> R.drawable.ic_item_fan
-            "lamp" -> R.drawable.ic_item_lamp
+            "desk" -> R.drawable.item_desk
+            "bed" -> R.drawable.item_bed
+            "fan" -> R.drawable.item_fan
+            "lamp" -> R.drawable.item_lamp
+            "cooker" -> R.drawable.item_cooker
             "chair" -> R.drawable.ic_item_chair
-            "cooker" -> R.drawable.ic_item_cooker
             "hairdryer" -> R.drawable.ic_item_hairdryer
-            else -> R.drawable.ic_item_default
+            else -> {
+                val lowerName = item.name.lowercase()
+                when {
+                    lowerName.contains("bàn") -> R.drawable.item_desk
+                    lowerName.contains("giường") -> R.drawable.item_bed
+                    lowerName.contains("quạt") -> R.drawable.item_fan
+                    lowerName.contains("đèn") -> R.drawable.item_lamp
+                    lowerName.contains("nồi") -> R.drawable.item_cooker
+                    else -> R.drawable.ic_item_default
+                }
+            }
         }
         binding.ivDetailImage.setImageResource(drawableRes)
 

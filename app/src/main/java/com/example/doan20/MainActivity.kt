@@ -25,10 +25,10 @@ class MainActivity : AppCompatActivity() {
         // Connect BottomNavigationView to NavController
         binding.bottomNavigation.setupWithNavController(navController)
 
-        // Hide BottomNavigationView on detail and add item screens
+        // Hide BottomNavigationView on login, detail, add/edit, and admin screens
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                R.id.nav_detail, R.id.nav_add_item -> {
+                R.id.nav_login, R.id.nav_detail, R.id.nav_add_item, R.id.nav_admin -> {
                     binding.bottomNavigation.visibility = View.GONE
                     binding.bottomNavDivider.visibility = View.GONE
                 }

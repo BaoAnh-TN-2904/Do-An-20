@@ -110,6 +110,16 @@ object ItemRepository {
         }
     }
 
+    fun setSwitchState(id: String, isOn: Boolean) {
+        _items.value = _items.value.map { item ->
+            if (item.id == id && item.hasSwitch) {
+                item.copy(isOn = isOn)
+            } else {
+                item
+            }
+        }
+    }
+
     fun toggleStatus(id: String) {
         _items.value = _items.value.map { item ->
             if (item.id == id) {

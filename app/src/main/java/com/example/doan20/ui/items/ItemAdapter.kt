@@ -11,8 +11,6 @@ import com.example.doan20.R
 import com.example.doan20.data.model.Item
 import com.example.doan20.data.model.ItemStatus
 import com.example.doan20.databinding.ItemItemBinding
-import java.text.NumberFormat
-import java.util.Locale
 
 class ItemAdapter(
     private val onItemClick: (Item) -> Unit,
@@ -44,16 +42,26 @@ class ItemAdapter(
             binding.tvItemName.text = item.name
             binding.tvCategory.text = item.category
 
-            // Image mapping
+            // Rich Figma PNG / SVG Item Image
             val drawableRes = when (item.imageType.lowercase()) {
-                "desk" -> R.drawable.ic_item_desk
-                "bed" -> R.drawable.ic_item_bed
-                "fan" -> R.drawable.ic_item_fan
-                "lamp" -> R.drawable.ic_item_lamp
+                "desk" -> R.drawable.item_desk
+                "bed" -> R.drawable.item_bed
+                "fan" -> R.drawable.item_fan
+                "lamp" -> R.drawable.item_lamp
+                "cooker" -> R.drawable.item_cooker
                 "chair" -> R.drawable.ic_item_chair
-                "cooker" -> R.drawable.ic_item_cooker
                 "hairdryer" -> R.drawable.ic_item_hairdryer
-                else -> R.drawable.ic_item_default
+                else -> {
+                    val lowerName = item.name.lowercase()
+                    when {
+                        lowerName.contains("bàn") -> R.drawable.item_desk
+                        lowerName.contains("giường") -> R.drawable.item_bed
+                        lowerName.contains("quạt") -> R.drawable.item_fan
+                        lowerName.contains("đèn") -> R.drawable.item_lamp
+                        lowerName.contains("nồi") -> R.drawable.item_cooker
+                        else -> R.drawable.ic_item_default
+                    }
+                }
             }
             binding.ivItemImage.setImageResource(drawableRes)
 
@@ -71,9 +79,14 @@ class ItemAdapter(
                 }
             }
 
-            // Switch Control
+            // Switch Control for electronic items (Figma 01_Dashboard & 02_ItemList)
             if (item.hasSwitch) {
                 binding.switchPower.visibility = View.VISIBLE
+                binding.switchPower.isUseMaterialThemeColors = false
+                binding.switchPower.trackDecorationDrawable = null
+                binding.switchPower.thumbIconDrawable = null
+                binding.switchPower.trackTintList = ContextCompat.getColorStateList(context, R.color.switch_track_selector)
+                binding.switchPower.thumbTintList = ContextCompat.getColorStateList(context, R.color.switch_thumb_selector)
                 binding.switchPower.setOnCheckedChangeListener(null)
                 binding.switchPower.isChecked = item.isOn
                 binding.switchPower.setOnCheckedChangeListener { _, isChecked ->

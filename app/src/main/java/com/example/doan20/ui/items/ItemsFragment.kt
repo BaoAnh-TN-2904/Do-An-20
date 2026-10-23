@@ -57,8 +57,8 @@ class ItemsFragment : Fragment() {
             onStatusClick = { item ->
                 viewModel.toggleStatus(item.id)
             },
-            onSwitchToggle = { item, _ ->
-                viewModel.toggleSwitch(item.id)
+            onSwitchToggle = { item, isChecked ->
+                viewModel.setSwitchState(item.id, isChecked)
             }
         )
 
@@ -90,25 +90,15 @@ class ItemsFragment : Fragment() {
         }
 
         binding.btnFilterSliders.setOnClickListener {
-            // Cycle through filters: All -> Active -> Broken -> All
-            val currentFilter = viewModel.statusFilter.value
-            val nextFilter = when (currentFilter) {
-                null -> ItemStatus.ACTIVE
-                ItemStatus.ACTIVE -> ItemStatus.BROKEN
-                ItemStatus.BROKEN -> null
-            }
-            viewModel.setStatusFilter(nextFilter)
-            val msg = when (nextFilter) {
-                null -> "Đang lọc: Tất cả"
-                ItemStatus.ACTIVE -> "Đang lọc: Còn dùng"
-                ItemStatus.BROKEN -> "Đang lọc: Hỏng"
-            }
-            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+            FilterBottomSheet.newInstance().show(
+                childFragmentManager,
+                FilterBottomSheet.TAG
+            )
         }
 
         binding.btnResetFilter.setOnClickListener {
             binding.etSearch.text?.clear()
-            viewModel.setStatusFilter(null)
+            viewModel.resetFilters()
         }
     }
 
