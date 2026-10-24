@@ -10,7 +10,6 @@ import android.view.ViewGroup
 import android.view.Window
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -22,6 +21,7 @@ import com.example.doan20.R
 import com.example.doan20.data.model.Item
 import com.example.doan20.data.model.ItemStatus
 import com.example.doan20.databinding.FragmentDetailBinding
+import com.example.doan20.ui.applyStatusBadge
 import com.example.doan20.ui.viewmodel.ItemViewModel
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
@@ -35,11 +35,18 @@ class ItemDetailFragment : Fragment() {
 
     private val viewModel: ItemViewModel by activityViewModels()
     private var currentItemId: String? = null
+    private var targetUserId: String? = null
+    private var ownerName: String? = null
+    private var ownerEmail: String? = null
     private var currentItem: Item? = null
+    private var firestoreListener: com.google.firebase.firestore.ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         currentItemId = arguments?.getString("itemId")
+        targetUserId = arguments?.getString("userId")
+        ownerName = arguments?.getString("ownerName")
+        ownerEmail = arguments?.getString("ownerEmail")
     }
 
     override fun onCreateView(
@@ -53,8 +60,24 @@ class ItemDetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupOwnerUI()
         setupListeners()
         observeItem()
+    }
+
+    private fun setupOwnerUI() {
+        if (targetUserId != null) {
+            // Admin · Chi tiết thiết bị
+            binding.tvDetailTitle.text = "Chi tiết thiết bị"
+            binding.layoutOwnerSection.visibility = View.VISIBLE
+            binding.tvOwnerName.text = ownerName ?: "Người dùng"
+            binding.tvOwnerEmail.text = ownerEmail ?: ""
+            binding.tvOwnerInitials.text = com.example.doan20.data.model.getInitials(ownerName ?: "ND")
+        } else {
+            // Normal user · Chi tiết vật dụng
+            binding.tvDetailTitle.text = "Chi tiết vật dụng"
+            binding.layoutOwnerSection.visibility = View.GONE
+        }
     }
 
     private fun setupListeners() {
@@ -78,8 +101,22 @@ class ItemDetailFragment : Fragment() {
         }
 
         binding.tvDetailStatus.setOnClickListener {
-            currentItemId?.let { id ->
-                viewModel.toggleStatus(id)
+            val item = currentItem ?: return@setOnClickListener
+            val nextStatus = if (item.status == ItemStatus.ACTIVE) ItemStatus.BROKEN else ItemStatus.ACTIVE
+            if (targetUserId != null) {
+                // Update in Firestore for admin
+                try {
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(targetUserId!!)
+                        .collection("items")
+                        .document(item.id)
+                        .update("status", nextStatus.name)
+                } catch (e: Exception) {
+                    Toast.makeText(requireContext(), "Lỗi cập nhật trạng thái", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                viewModel.toggleStatus(item.id)
             }
         }
     }
@@ -110,7 +147,20 @@ class ItemDetailFragment : Fragment() {
 
         btnConfirm.setOnClickListener {
             dialog.dismiss()
-            viewModel.deleteItem(item.id)
+            if (targetUserId != null) {
+                try {
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(targetUserId!!)
+                        .collection("items")
+                        .document(item.id)
+                        .delete()
+                } catch (e: Exception) {
+                    // Ignore
+                }
+            } else {
+                viewModel.deleteItem(item.id)
+            }
             Toast.makeText(requireContext(), R.string.msg_item_deleted, Toast.LENGTH_SHORT).show()
             findNavController().popBackStack()
         }
@@ -119,16 +169,42 @@ class ItemDetailFragment : Fragment() {
     }
 
     private fun observeItem() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.allItems.collect { items ->
-                    val item = items.find { it.id == currentItemId }
+        val userId = targetUserId
+        val itemId = currentItemId
+
+        if (userId != null && itemId != null) {
+            // Listen to device directly from Firestore for Admin
+            firestoreListener = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId)
+                .collection("items")
+                .document(itemId)
+                .addSnapshotListener { snapshot, error ->
+                    if (_binding == null) return@addSnapshotListener
+                    if (error != null || snapshot == null || !snapshot.exists()) {
+                        findNavController().popBackStack()
+                        return@addSnapshotListener
+                    }
+                    val item = snapshot.toObject(Item::class.java)?.copy(id = snapshot.id)
                     if (item != null) {
                         currentItem = item
                         bindItem(item)
                     } else {
-                        // Item was deleted
                         findNavController().popBackStack()
+                    }
+                }
+        } else {
+            // Normal user observation
+            viewLifecycleOwner.lifecycleScope.launch {
+                viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    viewModel.allItems.collect { items ->
+                        val item = items.find { it.id == currentItemId }
+                        if (item != null) {
+                            currentItem = item
+                            bindItem(item)
+                        } else {
+                            findNavController().popBackStack()
+                        }
                     }
                 }
             }
@@ -143,41 +219,10 @@ class ItemDetailFragment : Fragment() {
         binding.tvDetailCategory.text = item.category
 
         // Status Badge with dot matching Figma 03_ItemDetail
-        when (item.status) {
-            ItemStatus.ACTIVE -> {
-                binding.tvDetailStatus.text = "●  Còn dùng"
-                binding.tvDetailStatus.setBackgroundResource(R.drawable.bg_badge_active_pill)
-                binding.tvDetailStatus.setTextColor(ContextCompat.getColor(context, R.color.status_active))
-            }
-            ItemStatus.BROKEN -> {
-                binding.tvDetailStatus.text = "●  Hỏng"
-                binding.tvDetailStatus.setBackgroundResource(R.drawable.bg_badge_broken_pill)
-                binding.tvDetailStatus.setTextColor(ContextCompat.getColor(context, R.color.status_broken))
-            }
-        }
+        binding.tvDetailStatus.applyStatusBadge(item.status)
 
-        // Rich Figma PNG / SVG Item Image
-        val drawableRes = when (item.imageType.lowercase()) {
-            "desk" -> R.drawable.item_desk
-            "bed" -> R.drawable.item_bed
-            "fan" -> R.drawable.item_fan
-            "lamp" -> R.drawable.item_lamp
-            "cooker" -> R.drawable.item_cooker
-            "chair" -> R.drawable.ic_item_chair
-            "hairdryer" -> R.drawable.ic_item_hairdryer
-            else -> {
-                val lowerName = item.name.lowercase()
-                when {
-                    lowerName.contains("bàn") -> R.drawable.item_desk
-                    lowerName.contains("giường") -> R.drawable.item_bed
-                    lowerName.contains("quạt") -> R.drawable.item_fan
-                    lowerName.contains("đèn") -> R.drawable.item_lamp
-                    lowerName.contains("nồi") -> R.drawable.item_cooker
-                    else -> R.drawable.ic_item_default
-                }
-            }
-        }
-        binding.ivDetailImage.setImageResource(drawableRes)
+        // Item Image
+        binding.ivDetailImage.setImageResource(item.getDrawableRes())
 
         // Price
         if (item.price != null && item.price > 0) {
@@ -198,6 +243,8 @@ class ItemDetailFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        firestoreListener?.remove()
+        firestoreListener = null
         _binding = null
     }
 }

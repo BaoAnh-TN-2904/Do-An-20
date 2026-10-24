@@ -21,63 +21,39 @@
             app:destination="@id/nav_admin"
             app:popUpTo="@id/nav_login"
             app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_login_to_register"
+            app:destination="@id/nav_register" />
     </fragment>
 
-    <!-- Home Tab -->
+    <!-- Register Screen -->
+    <fragment
+        android:id="@+id/nav_register"
+        android:name="com.example.doan20.ui.auth.RegisterFragment"
+        android:label="Đăng ký"
+        tools:layout="@layout/fragment_register">
+        <action
+            android:id="@+id/action_register_to_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_login"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Main Screen with ViewPager2 Tabs (Trang chủ, Vật dụng, Thống kê, Cá nhân) -->
     <fragment
         android:id="@+id/nav_home"
-        android:name="com.example.doan20.ui.home.HomeFragment"
-        android:label="Trang chủ"
-        tools:layout="@layout/fragment_home">
-        <action
-            android:id="@+id/action_home_to_items"
-            app:destination="@id/nav_items" />
-        <action
-            android:id="@+id/action_home_to_detail"
-            app:destination="@id/nav_detail" />
-        <action
-            android:id="@+id/action_home_to_add"
-            app:destination="@id/nav_add_item" />
-    </fragment>
+        android:name="com.example.doan20.ui.main.MainFragment"
+        android:label="Trang chính"
+        tools:layout="@layout/fragment_main" />
 
-    <!-- Items Tab -->
+    <!-- Filter Screen (Figma 09_Filter) -->
     <fragment
-        android:id="@+id/nav_items"
-        android:name="com.example.doan20.ui.items.ItemsFragment"
-        android:label="Vật dụng"
-        tools:layout="@layout/fragment_items">
-        <action
-            android:id="@+id/action_items_to_detail"
-            app:destination="@id/nav_detail" />
-        <action
-            android:id="@+id/action_items_to_add"
-            app:destination="@id/nav_add_item" />
-    </fragment>
+        android:id="@+id/nav_filter"
+        android:name="com.example.doan20.ui.items.FilterFragment"
+        android:label="Bộ lọc"
+        tools:layout="@layout/fragment_filter" />
 
-    <!-- Statistics Tab -->
-    <fragment
-        android:id="@+id/nav_statistics"
-        android:name="com.example.doan20.ui.statistics.StatisticsFragment"
-        android:label="Thống kê"
-        tools:layout="@layout/fragment_statistics" />
-
-    <!-- Profile Tab -->
-    <fragment
-        android:id="@+id/nav_profile"
-        android:name="com.example.doan20.ui.profile.ProfileFragment"
-        android:label="Cá nhân"
-        tools:layout="@layout/fragment_profile">
-        <action
-            android:id="@+id/action_profile_to_login"
-            app:destination="@id/nav_login"
-            app:popUpTo="@id/nav_home"
-            app:popUpToInclusive="true" />
-        <action
-            android:id="@+id/action_profile_to_admin"
-            app:destination="@id/nav_admin" />
-    </fragment>
-
-    <!-- Detail Screen -->
+    <!-- Detail Screen (Figma 03_ItemDetail & Admin Chi tiết thiết bị) -->
     <fragment
         android:id="@+id/nav_detail"
         android:name="com.example.doan20.ui.detail.ItemDetailFragment"
@@ -86,6 +62,21 @@
         <argument
             android:name="itemId"
             app:argType="string" />
+        <argument
+            android:name="userId"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <argument
+            android:name="ownerName"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <argument
+            android:name="ownerEmail"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
         <action
             android:id="@+id/action_detail_to_edit"
             app:destination="@id/nav_add_item" />

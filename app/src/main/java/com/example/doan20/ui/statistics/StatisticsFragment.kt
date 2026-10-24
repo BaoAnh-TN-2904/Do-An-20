@@ -43,14 +43,20 @@ class StatisticsFragment : Fragment() {
                     val active = items.count { it.status == ItemStatus.ACTIVE }
                     val broken = items.count { it.status == ItemStatus.BROKEN }
 
-                    val activeRate = if (total > 0) (active * 100) / total else 100
+                    val activeRate = if (total > 0) (active * 100) / total else 0
                     val brokenRate = if (total > 0) (broken * 100) / total else 0
 
                     // 1. Total Banner
                     binding.tvTotalCountLarge.text = total.toString()
 
                     // 2. Donut Chart
-                    binding.donutProgress.setProgressCompat(activeRate, true)
+                    val trackColor = when {
+                        total == 0 -> androidx.core.content.ContextCompat.getColor(requireContext(), com.example.doan20.R.color.surface_variant)
+                        broken > 0 -> androidx.core.content.ContextCompat.getColor(requireContext(), com.example.doan20.R.color.status_broken)
+                        else -> androidx.core.content.ContextCompat.getColor(requireContext(), com.example.doan20.R.color.surface_variant)
+                    }
+                    binding.donutProgress.trackColor = trackColor
+                    binding.donutProgress.setProgressCompat(if (total > 0) activeRate else 0, true)
                     binding.tvDonutCenterCount.text = total.toString()
 
                     binding.tvActiveCountStat.text = active.toString()

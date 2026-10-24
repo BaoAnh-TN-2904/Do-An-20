@@ -7,9 +7,12 @@ import com.example.doan20.data.model.ItemStatus
 import com.example.doan20.data.model.User
 import com.example.doan20.data.repository.AuthRepository
 import com.example.doan20.data.repository.ItemRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
@@ -19,12 +22,48 @@ class ItemViewModel : ViewModel() {
 
     val currentUser: StateFlow<User?> = authRepository.currentUser
 
-    fun login(email: String, pass: String): Result<User> {
-        return authRepository.login(email, pass)
+    private val _selectedTab = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val selectedTab: SharedFlow<Int> = _selectedTab.asSharedFlow()
+
+    fun selectTab(index: Int) {
+        _selectedTab.tryEmit(index)
+    }
+
+    fun login(username: String, pass: String, onComplete: (Result<User>) -> Unit) {
+        authRepository.login(username, pass) { result ->
+            result.onSuccess { user ->
+                repository.initForUser(user.username)
+            }
+            onComplete(result)
+        }
+    }
+
+    fun register(
+        username: String,
+        name: String,
+        roomName: String,
+        pass: String,
+        onComplete: (Result<User>) -> Unit
+    ) {
+        authRepository.register(username, name, roomName, pass) { result ->
+            result.onSuccess { user ->
+                repository.initForUser(user.username)
+            }
+            onComplete(result)
+        }
+    }
+
+    fun updateProfile(
+        newName: String,
+        newRoomName: String,
+        onComplete: (Result<User>) -> Unit
+    ) {
+        authRepository.updateProfile(newName, newRoomName, onComplete)
     }
 
     fun logout() {
         authRepository.logout()
+        repository.clear()
     }
 
     private val _searchQuery = MutableStateFlow("")

@@ -4,15 +4,19 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
 import com.example.doan20.data.model.ItemStatus
-import com.example.doan20.databinding.BottomSheetFilterBinding
+import com.example.doan20.databinding.FragmentFilterBinding
 import com.example.doan20.ui.viewmodel.ItemViewModel
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
-class FilterBottomSheet : BottomSheetDialogFragment() {
+/**
+ * Full screen filter page matching Figma 09_Filter
+ */
+class FilterFragment : Fragment() {
 
-    private var _binding: BottomSheetFilterBinding? = null
+    private var _binding: FragmentFilterBinding? = null
     private val binding get() = _binding!!
 
     private val viewModel: ItemViewModel by activityViewModels()
@@ -25,7 +29,7 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = BottomSheetFilterBinding.inflate(inflater, container, false)
+        _binding = FragmentFilterBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -42,6 +46,11 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun setupListeners() {
+        // Back button
+        binding.btnFilterBack.setOnClickListener {
+            findNavController().popBackStack()
+        }
+
         // Category selection rows
         binding.rowCategoryAll.setOnClickListener {
             tempCategory = null
@@ -78,16 +87,11 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
             updateStatusUI()
         }
 
-        // Apply
+        // Apply button
         binding.btnApplyFilter.setOnClickListener {
             viewModel.setCategoryFilter(tempCategory)
             viewModel.setStatusFilter(tempStatus)
-            dismiss()
-        }
-
-        // Cancel
-        binding.btnCancelFilter.setOnClickListener {
-            dismiss()
+            findNavController().popBackStack()
         }
     }
 
@@ -108,10 +112,5 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    companion object {
-        const val TAG = "FilterBottomSheet"
-        fun newInstance() = FilterBottomSheet()
     }
 }

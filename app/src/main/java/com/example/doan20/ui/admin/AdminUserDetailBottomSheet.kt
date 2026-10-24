@@ -1,6 +1,8 @@
 package com.example.doan20.ui.admin
 
 import android.os.Bundle
+import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,25 +10,28 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.example.doan20.R
 import com.example.doan20.data.model.AdminUser
 import com.example.doan20.data.model.Item
 import com.example.doan20.data.model.ItemStatus
+import com.example.doan20.data.mqtt.MqttManager
 import com.example.doan20.data.repository.AdminRepository
 import com.example.doan20.databinding.BottomSheetAdminUserDetailBinding
-import com.example.doan20.ui.viewmodel.ItemViewModel
+import com.example.doan20.ui.applyStatusBadge
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 
 class AdminUserDetailBottomSheet : BottomSheetDialogFragment() {
 
     private var _binding: BottomSheetAdminUserDetailBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: ItemViewModel by activityViewModels()
     private var userId: String? = null
+    private var currentUser: AdminUser? = null
+    private var itemsListener: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,14 +50,21 @@ class AdminUserDetailBottomSheet : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val user = AdminRepository.users.find { it.id == userId } ?: AdminRepository.users[0]
-        bindUser(user)
+        val targetId = userId.orEmpty()
+        val user = AdminRepository.users.find { it.id == targetId }
+        if (user != null) {
+            currentUser = user
+            bindUser(user)
+            loadUserItems(targetId)
+        } else {
+            dismiss()
+        }
     }
 
     private fun bindUser(user: AdminUser) {
         binding.tvSheetUserName.text = user.name
         binding.tvSheetUserEmail.text = user.email
-        binding.tvSheetUserCode.text = "${user.id} · Người dùng"
+        binding.tvSheetUserCode.text = "@${user.id} · Người dùng"
         binding.tvSheetUserInitials.text = user.initials
 
         binding.tvSheetDeviceTotal.text = user.deviceCount.toString()
@@ -60,13 +72,60 @@ class AdminUserDetailBottomSheet : BottomSheetDialogFragment() {
         binding.tvSheetDeviceBroken.text = user.brokenCount.toString()
 
         binding.tvSheetDeviceSectionTitle.text = "Thiết bị của ${user.name}"
+    }
 
-        // Populate sample device cards for this user
-        val items = viewModel.allItems.value
+    private fun loadUserItems(targetUserId: String) {
         binding.layoutSheetDeviceList.removeAllViews()
 
-        val displayItems = items.take(4)
-        for (item in displayItems) {
+        try {
+            itemsListener = FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(targetUserId)
+                .collection("items")
+                .addSnapshotListener { snapshot, error ->
+                    if (_binding == null) return@addSnapshotListener
+                    if (error != null) {
+                        Log.w("AdminUserDetail", "Error loading items: ${error.message}")
+                        return@addSnapshotListener
+                    }
+
+                    val items = snapshot?.documents?.mapNotNull { doc ->
+                        val item = doc.toObject(Item::class.java)
+                        item?.copy(id = doc.id)
+                    } ?: emptyList()
+
+                    populateDevices(targetUserId, items)
+                }
+        } catch (e: Exception) {
+            Log.e("AdminUserDetail", "Failed to listen to items", e)
+        }
+    }
+
+    private fun populateDevices(targetUserId: String, items: List<Item>) {
+        if (_binding == null) return
+        binding.layoutSheetDeviceList.removeAllViews()
+
+        // Update stats cards in real time
+        val total = items.size
+        val active = items.count { it.status == ItemStatus.ACTIVE }
+        val broken = items.count { it.status == ItemStatus.BROKEN }
+        binding.tvSheetDeviceTotal.text = total.toString()
+        binding.tvSheetDeviceActive.text = active.toString()
+        binding.tvSheetDeviceBroken.text = broken.toString()
+
+        if (items.isEmpty()) {
+            val tvEmpty = TextView(requireContext()).apply {
+                text = "Người dùng này chưa thêm thiết bị nào."
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.text_muted))
+                textSize = 13f
+                gravity = Gravity.CENTER
+                setPadding(0, 32, 0, 32)
+            }
+            binding.layoutSheetDeviceList.addView(tvEmpty)
+            return
+        }
+
+        for (item in items) {
             val itemView = layoutInflater.inflate(R.layout.item_item, binding.layoutSheetDeviceList, false)
             val ivImage = itemView.findViewById<ImageView>(R.id.ivItemImage)
             val tvName = itemView.findViewById<TextView>(R.id.tvItemName)
@@ -75,34 +134,13 @@ class AdminUserDetailBottomSheet : BottomSheetDialogFragment() {
             val switchPower = itemView.findViewById<MaterialSwitch>(R.id.switchPower)
 
             tvName.text = item.name
-            tvCategory.text = "${item.category} · TB-00${item.id}"
+            tvCategory.text = "${item.category} · TB-${item.id.takeLast(4)}"
 
-            val drawableRes = when (item.imageType.lowercase()) {
-                "desk" -> R.drawable.item_desk
-                "bed" -> R.drawable.item_bed
-                "fan" -> R.drawable.item_fan
-                "lamp" -> R.drawable.item_lamp
-                "cooker" -> R.drawable.item_cooker
-                else -> R.drawable.ic_item_default
-            }
-            ivImage.setImageResource(drawableRes)
-
-            when (item.status) {
-                ItemStatus.ACTIVE -> {
-                    tvStatusBadge.text = "● Còn dùng"
-                    tvStatusBadge.setBackgroundResource(R.drawable.bg_badge_active_pill)
-                    tvStatusBadge.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_active))
-                }
-                ItemStatus.BROKEN -> {
-                    tvStatusBadge.text = "● Hỏng"
-                    tvStatusBadge.setBackgroundResource(R.drawable.bg_badge_broken_pill)
-                    tvStatusBadge.setTextColor(ContextCompat.getColor(requireContext(), R.color.status_broken))
-                }
-            }
+            ivImage.setImageResource(item.getDrawableRes())
+            tvStatusBadge.applyStatusBadge(item.status)
 
             if (item.hasSwitch) {
                 switchPower.visibility = View.VISIBLE
-                switchPower.isUseMaterialThemeColors = false
                 switchPower.trackDecorationDrawable = null
                 switchPower.thumbIconDrawable = null
                 switchPower.trackTintList = ContextCompat.getColorStateList(requireContext(), R.color.switch_track_selector)
@@ -110,7 +148,18 @@ class AdminUserDetailBottomSheet : BottomSheetDialogFragment() {
                 switchPower.setOnCheckedChangeListener(null)
                 switchPower.isChecked = item.isOn
                 switchPower.setOnCheckedChangeListener { _, isChecked ->
-                    viewModel.setSwitchState(item.id, isChecked)
+                    // 1. MQTT
+                    MqttManager.publish("doan20/$targetUserId/device/${item.id}/switch", if (isChecked) "1" else "0")
+                    // 2. Firestore
+                    try {
+                        FirebaseFirestore.getInstance().collection("users")
+                            .document(targetUserId)
+                            .collection("items")
+                            .document(item.id)
+                            .update("isOn", isChecked)
+                    } catch (e: Exception) {
+                        Log.e("AdminUserDetail", "Failed to update switch", e)
+                    }
                 }
             } else {
                 switchPower.visibility = View.GONE
@@ -120,7 +169,12 @@ class AdminUserDetailBottomSheet : BottomSheetDialogFragment() {
                 dismiss()
                 findNavController().navigate(
                     R.id.action_admin_to_detail,
-                    bundleOf("itemId" to item.id)
+                    bundleOf(
+                        "itemId" to item.id,
+                        "userId" to targetUserId,
+                        "ownerName" to (currentUser?.name ?: "Người dùng"),
+                        "ownerEmail" to (currentUser?.email ?: "")
+                    )
                 )
             }
 
@@ -130,6 +184,8 @@ class AdminUserDetailBottomSheet : BottomSheetDialogFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        itemsListener?.remove()
+        itemsListener = null
         _binding = null
     }
 

@@ -50,7 +50,7 @@ class ItemsFragment : Fragment() {
         itemAdapter = ItemAdapter(
             onItemClick = { item ->
                 findNavController().navigate(
-                    R.id.action_items_to_detail,
+                    R.id.nav_detail,
                     bundleOf("itemId" to item.id)
                 )
             },
@@ -75,6 +75,17 @@ class ItemsFragment : Fragment() {
                 val query = s?.toString().orEmpty()
                 viewModel.setSearchQuery(query)
                 binding.btnClearSearch.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
+
+                // Toggle between normal header (02_ItemList) and search header (10_SearchResults)
+                if (query.isNotBlank()) {
+                    binding.tvItemsTitle.visibility = View.GONE
+                    binding.btnAddItem.visibility = View.GONE
+                    binding.layoutSearchTitle.visibility = View.VISIBLE
+                } else {
+                    binding.tvItemsTitle.visibility = View.VISIBLE
+                    binding.btnAddItem.visibility = View.VISIBLE
+                    binding.layoutSearchTitle.visibility = View.GONE
+                }
             }
             override fun afterTextChanged(s: Editable?) {}
         })
@@ -82,18 +93,20 @@ class ItemsFragment : Fragment() {
         binding.btnClearSearch.setOnClickListener {
             binding.etSearch.text?.clear()
         }
+
+        binding.btnSearchBack.setOnClickListener {
+            binding.etSearch.text?.clear()
+        }
     }
 
     private fun setupListeners() {
         binding.btnAddItem.setOnClickListener {
-            findNavController().navigate(R.id.action_items_to_add)
+            findNavController().navigate(R.id.nav_add_item)
         }
 
+        // Navigate to full-screen FilterFragment (Figma 09_Filter)
         binding.btnFilterSliders.setOnClickListener {
-            FilterBottomSheet.newInstance().show(
-                childFragmentManager,
-                FilterBottomSheet.TAG
-            )
+            findNavController().navigate(R.id.nav_filter)
         }
 
         binding.btnResetFilter.setOnClickListener {
@@ -108,14 +121,26 @@ class ItemsFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.allItems.collect { all ->
-                        binding.tvTotalItemHeader.text = "${all.size} vật dụng"
+                        if (viewModel.searchQuery.value.isBlank()) {
+                            binding.tvTotalItemHeader.text = "${all.size} vật dụng"
+                        }
                     }
                 }
                 launch {
                     viewModel.filteredItems.collect { items ->
                         itemAdapter.submitList(items)
                         val total = viewModel.allItems.value.size
-                        binding.tvShowingCount.text = "Hiển thị ${items.size} / $total vật dụng"
+                        val query = viewModel.searchQuery.value
+
+                        if (query.isNotBlank()) {
+                            // Header matching Figma 10_SearchResults
+                            binding.tvTotalItemHeader.text = "Kết quả tìm kiếm"
+                            binding.tvShowingCount.text = "${items.size} kết quả phù hợp cho \"$query\""
+                        } else {
+                            // Header matching Figma 02_ItemList
+                            binding.tvTotalItemHeader.text = "$total vật dụng"
+                            binding.tvShowingCount.text = "Hiển thị ${items.size} / $total vật dụng"
+                        }
 
                         if (items.isEmpty()) {
                             binding.rvItems.visibility = View.GONE

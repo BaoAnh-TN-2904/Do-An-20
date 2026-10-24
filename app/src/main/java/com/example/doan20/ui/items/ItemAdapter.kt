@@ -11,6 +11,7 @@ import com.example.doan20.R
 import com.example.doan20.data.model.Item
 import com.example.doan20.data.model.ItemStatus
 import com.example.doan20.databinding.ItemItemBinding
+import com.example.doan20.ui.applyStatusBadge
 
 class ItemAdapter(
     private val onItemClick: (Item) -> Unit,
@@ -42,47 +43,16 @@ class ItemAdapter(
             binding.tvItemName.text = item.name
             binding.tvCategory.text = item.category
 
-            // Rich Figma PNG / SVG Item Image
-            val drawableRes = when (item.imageType.lowercase()) {
-                "desk" -> R.drawable.item_desk
-                "bed" -> R.drawable.item_bed
-                "fan" -> R.drawable.item_fan
-                "lamp" -> R.drawable.item_lamp
-                "cooker" -> R.drawable.item_cooker
-                "chair" -> R.drawable.ic_item_chair
-                "hairdryer" -> R.drawable.ic_item_hairdryer
-                else -> {
-                    val lowerName = item.name.lowercase()
-                    when {
-                        lowerName.contains("bàn") -> R.drawable.item_desk
-                        lowerName.contains("giường") -> R.drawable.item_bed
-                        lowerName.contains("quạt") -> R.drawable.item_fan
-                        lowerName.contains("đèn") -> R.drawable.item_lamp
-                        lowerName.contains("nồi") -> R.drawable.item_cooker
-                        else -> R.drawable.ic_item_default
-                    }
-                }
-            }
-            binding.ivItemImage.setImageResource(drawableRes)
+            // Item Image
+            binding.ivItemImage.setImageResource(item.getDrawableRes())
 
-            // Status Badge with dot matching Figma
-            when (item.status) {
-                ItemStatus.ACTIVE -> {
-                    binding.tvStatusBadge.text = "● Còn dùng"
-                    binding.tvStatusBadge.setBackgroundResource(R.drawable.bg_badge_active_pill)
-                    binding.tvStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.status_active))
-                }
-                ItemStatus.BROKEN -> {
-                    binding.tvStatusBadge.text = "● Hỏng"
-                    binding.tvStatusBadge.setBackgroundResource(R.drawable.bg_badge_broken_pill)
-                    binding.tvStatusBadge.setTextColor(ContextCompat.getColor(context, R.color.status_broken))
-                }
-            }
+            // Status Badge & Broken Warning
+            binding.tvStatusBadge.applyStatusBadge(item.status)
+            binding.layoutBrokenWarning.visibility = if (item.status == ItemStatus.BROKEN) View.VISIBLE else View.GONE
 
             // Switch Control for electronic items (Figma 01_Dashboard & 02_ItemList)
             if (item.hasSwitch) {
                 binding.switchPower.visibility = View.VISIBLE
-                binding.switchPower.isUseMaterialThemeColors = false
                 binding.switchPower.trackDecorationDrawable = null
                 binding.switchPower.thumbIconDrawable = null
                 binding.switchPower.trackTintList = ContextCompat.getColorStateList(context, R.color.switch_track_selector)

@@ -29,6 +29,7 @@ class AddItemFragment : Fragment() {
 
     private val categories = listOf("Nội thất", "Điện tử", "Đồ dùng cá nhân", "Khác")
     private val statuses = listOf("Còn dùng", "Hỏng")
+    private val pinTypes = listOf("GPIO", "SPI", "I2C", "UART", "ADC", "PWM", "DAC", "Khác")
     private val imageTypes = listOf("default", "desk", "bed", "fan", "lamp", "cooker", "chair", "hairdryer")
     private var selectedImageTypeIndex = 0
 
@@ -91,7 +92,7 @@ class AddItemFragment : Fragment() {
             binding.layoutConditionalGpio.visibility = View.VISIBLE
             item.pinConfig?.let { cfg ->
                 val parts = cfg.split(" ", limit = 2)
-                if (parts.isNotEmpty()) binding.etPinType.setText(parts[0])
+                if (parts.isNotEmpty()) binding.actPinType.setText(parts[0], false)
                 if (parts.size > 1) binding.etPinNumber.setText(parts[1])
             }
         }
@@ -121,9 +122,12 @@ class AddItemFragment : Fragment() {
             // Show GPIO 2-column input only when category is 'Điện tử' (matching Figma)
             if (selected.equals("Điện tử", ignoreCase = true)) {
                 binding.layoutConditionalGpio.visibility = View.VISIBLE
+                if (binding.actPinType.text.isNullOrBlank()) {
+                    binding.actPinType.setText(pinTypes[0], false)
+                }
             } else {
                 binding.layoutConditionalGpio.visibility = View.GONE
-                binding.etPinType.text?.clear()
+                binding.actPinType.text?.clear()
                 binding.etPinNumber.text?.clear()
             }
         }
@@ -137,6 +141,20 @@ class AddItemFragment : Fragment() {
         binding.actStatus.setAdapter(statusAdapter)
         if (editingItem == null) {
             binding.actStatus.setText(statuses[0], false)
+        }
+
+        // Pin Type Dropdown (GPIO, SPI, I2C, UART, ADC, PWM, DAC, Khác)
+        val pinTypeAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_dropdown_item_1line,
+            pinTypes
+        )
+        binding.actPinType.setAdapter(pinTypeAdapter)
+        if (editingItem == null) {
+            binding.actPinType.setText(pinTypes[0], false)
+        }
+        binding.actPinType.setOnClickListener {
+            binding.actPinType.showDropDown()
         }
     }
 
@@ -176,15 +194,10 @@ class AddItemFragment : Fragment() {
 
     private fun updateImagePreview() {
         val currentType = imageTypes[selectedImageTypeIndex]
-        val drawableRes = when (currentType) {
-            "desk" -> R.drawable.item_desk
-            "bed" -> R.drawable.item_bed
-            "fan" -> R.drawable.item_fan
-            "lamp" -> R.drawable.item_lamp
-            "cooker" -> R.drawable.item_cooker
-            "chair" -> R.drawable.ic_item_chair
-            "hairdryer" -> R.drawable.ic_item_hairdryer
-            else -> R.drawable.ic_camera
+        val drawableRes = if (currentType == "default") {
+            R.drawable.ic_camera
+        } else {
+            com.example.doan20.data.model.resolveItemDrawable(currentType)
         }
         binding.ivAddPreview.setImageResource(drawableRes)
     }
@@ -231,7 +244,7 @@ class AddItemFragment : Fragment() {
         val buyDate = binding.etBuyDate.text?.toString()?.trim().takeIf { !it.isNullOrBlank() }
 
         // GPIO configuration
-        val pinType = binding.etPinType.text?.toString()?.trim().orEmpty()
+        val pinType = binding.actPinType.text?.toString()?.trim().orEmpty()
         val pinNumber = binding.etPinNumber.text?.toString()?.trim().orEmpty()
         val gpioConfig = if (pinType.isNotBlank() || pinNumber.isNotBlank()) {
             "$pinType $pinNumber".trim()

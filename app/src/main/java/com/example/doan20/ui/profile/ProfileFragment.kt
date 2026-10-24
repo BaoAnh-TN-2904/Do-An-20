@@ -10,8 +10,10 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.example.doan20.R
+import com.example.doan20.data.model.UserRole
 import com.example.doan20.databinding.FragmentProfileBinding
 import com.example.doan20.ui.notifications.NotificationsBottomSheet
 import com.example.doan20.ui.viewmodel.ItemViewModel
@@ -42,7 +44,10 @@ class ProfileFragment : Fragment() {
 
     private fun setupListeners() {
         binding.btnEditProfileInfo.setOnClickListener {
-            Toast.makeText(requireContext(), "Chỉnh sửa thông tin cá nhân", Toast.LENGTH_SHORT).show()
+            EditProfileBottomSheet.newInstance().show(
+                childFragmentManager,
+                EditProfileBottomSheet.TAG
+            )
         }
 
         binding.btnNotificationSettings.setOnClickListener {
@@ -52,12 +57,8 @@ class ProfileFragment : Fragment() {
             )
         }
 
-        binding.btnThemeSettings.setOnClickListener {
-            Toast.makeText(requireContext(), "Chế độ giao diện: Sáng (Mặc định)", Toast.LENGTH_SHORT).show()
-        }
-
         binding.btnAdminDashboard.setOnClickListener {
-            findNavController().navigate(R.id.action_profile_to_admin)
+            findNavController().navigate(R.id.nav_admin)
         }
 
         binding.btnSettingsLogout.setOnClickListener {
@@ -67,7 +68,10 @@ class ProfileFragment : Fragment() {
                 .setPositiveButton("Đăng xuất") { _, _ ->
                     viewModel.logout()
                     Toast.makeText(requireContext(), "Đã đăng xuất thành công", Toast.LENGTH_SHORT).show()
-                    findNavController().navigate(R.id.action_profile_to_login)
+                    val navOptions = NavOptions.Builder()
+                        .setPopUpTo(R.id.nav_graph, true)
+                        .build()
+                    findNavController().navigate(R.id.nav_login, null, navOptions)
                 }
                 .setNegativeButton("Hủy", null)
                 .show()
@@ -81,15 +85,10 @@ class ProfileFragment : Fragment() {
                     viewModel.currentUser.collect { user ->
                         if (user != null) {
                             binding.tvProfileName.text = user.name
-                            binding.tvProfileEmail.text = user.email
-                            // Generate initials (e.g. "MA", "AD")
-                            val words = user.name.trim().split(" ")
-                            val initials = if (words.size >= 2) {
-                                "${words.first().take(1)}${words.last().take(1)}".uppercase()
-                            } else {
-                                user.name.take(2).uppercase()
-                            }
-                            binding.tvAvatarInitials.text = initials
+                            val roomInfo = if (user.roomName.isNotBlank()) " · ${user.roomName}" else ""
+                            binding.tvProfileEmail.text = "@${user.username}$roomInfo"
+                            binding.tvAvatarInitials.text = user.initials
+                            binding.btnAdminDashboard.visibility = if (user.role == UserRole.ADMIN) View.VISIBLE else View.GONE
                         }
                     }
                 }

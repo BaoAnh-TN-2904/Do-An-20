@@ -9,7 +9,7 @@
     <string name="nav_admin">Quản trị</string>
 
     <!-- Home Screen (Figma 01_Dashboard) -->
-    <string name="greeting_title">Chào Minh Anh!</string>
+    <string name="greeting_title">Xin chào!</string>
     <string name="greeting_subtitle">Phòng gọn gàng, mọi thứ trong tầm tay.</string>
     <string name="stat_total">Tổng vật dụng</string>
     <string name="stat_active">Còn dùng</string>
@@ -92,8 +92,8 @@
 
     <!-- Profile Screen (Figma 07_Profile) -->
     <string name="profile_title">Cá nhân</string>
-    <string name="profile_name">Nguyễn Minh Anh</string>
-    <string name="profile_email">minhanh.nguyen@gmail.com</string>
+    <string name="profile_name">Người dùng</string>
+    <string name="profile_email">Chưa đăng nhập</string>
     <string name="section_account_settings">Tài khoản &amp; cài đặt</string>
     <string name="settings_edit_info">Chỉnh sửa thông tin</string>
     <string name="settings_edit_info_sub">Tên, email và ảnh đại diện</string>
@@ -112,11 +112,11 @@
     <string name="admin_overview_subtitle">Người dùng và thiết bị trong tầm tay.</string>
     <string name="admin_total_users">Tổng người dùng</string>
     <string name="admin_total_devices">Tổng thiết bị</string>
-    <string name="admin_devices_status_summary">51 còn dùng · 12 hỏng</string>
+    <string name="admin_devices_status_summary">Tất cả thiết bị</string>
     <string name="admin_search_users_hint">Tìm tên hoặc mã người dùng...</string>
     <string name="admin_users_header">Người dùng</string>
     <string name="admin_user_devices_count">%1$d thiết bị</string>
-    <string name="admin_mock_data_notice">Dữ liệu minh họa · Chế độ quản trị</string>
+    <string name="admin_mock_data_notice">Hệ thống Quản trị · Đồng bộ Firebase</string>
     <string name="admin_detail_user_title">Chi tiết người dùng</string>
     <string name="admin_detail_device_title">Chi tiết thiết bị</string>
     <string name="admin_owner_header">Chủ sở hữu</string>
@@ -132,4 +132,14 @@
     <string name="cd_item_image">Ảnh vật dụng</string>
     <string name="cd_switch">Công tắc thiết bị</string>
     <string name="cd_back">Quay lại</string>
+
+    <!-- Notifications Sheet -->
+    <string name="notifications_title">Thông báo</string>
+    <string name="action_close">Đóng</string>
+    <string name="notif_1_title">Đèn bàn bị hỏng</string>
+    <string name="notif_1_time">10 phút trước</string>
+    <string name="notif_1_desc">Đèn bàn trong phòng không sáng, cần kiểm tra bóng hoặc thay dây nguồn.</string>
+    <string name="notif_2_title">Quạt điện đang bật</string>
+    <string name="notif_2_time">30 phút trước</string>
+    <string name="notif_2_desc">Quạt điện đang ở trạng thái BẬT qua bộ điều khiển thông minh ESP32.</string>
 </resources>

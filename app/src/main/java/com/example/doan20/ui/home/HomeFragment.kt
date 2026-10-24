@@ -48,7 +48,7 @@ class HomeFragment : Fragment() {
         recentAdapter = ItemAdapter(
             onItemClick = { item ->
                 findNavController().navigate(
-                    R.id.action_home_to_detail,
+                    R.id.nav_detail,
                     bundleOf("itemId" to item.id)
                 )
             },
@@ -68,6 +68,11 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupListeners() {
+        // User avatar clicks to smoothly switch to profile tab
+        binding.btnUserAvatar.setOnClickListener {
+            viewModel.selectTab(3)
+        }
+
         // Notification sheet
         binding.btnNotification.setOnClickListener {
             NotificationsBottomSheet.newInstance().show(
@@ -76,31 +81,30 @@ class HomeFragment : Fragment() {
             )
         }
 
-        // Stats card clicks - navigate to Items tab with active filter
+        // Stats card clicks: Card total smoothly switches to Statistics tab
         binding.cardStatTotal.setOnClickListener {
-            viewModel.setStatusFilter(null)
-            findNavController().navigate(R.id.action_home_to_items)
+            viewModel.selectTab(2)
         }
 
         binding.cardStatActive.setOnClickListener {
             viewModel.setStatusFilter(ItemStatus.ACTIVE)
-            findNavController().navigate(R.id.action_home_to_items)
+            viewModel.selectTab(1)
         }
 
         binding.cardStatBroken.setOnClickListener {
             viewModel.setStatusFilter(ItemStatus.BROKEN)
-            findNavController().navigate(R.id.action_home_to_items)
+            viewModel.selectTab(1)
         }
 
-        // See all items
+        // See all items switches to Items tab
         binding.tvSeeAll.setOnClickListener {
             viewModel.setStatusFilter(null)
-            findNavController().navigate(R.id.action_home_to_items)
+            viewModel.selectTab(1)
         }
 
-        // Add item button
+        // Add item button opens AddItemFragment
         binding.btnAddItemHome.setOnClickListener {
-            findNavController().navigate(R.id.action_home_to_add)
+            findNavController().navigate(R.id.nav_add_item)
         }
     }
 
@@ -109,8 +113,9 @@ class HomeFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.currentUser.collect { user ->
-                        val name = user?.name ?: "Minh Anh"
-                        binding.tvGreetingTitle.text = "Chào $name!"
+                        val name = user?.name.orEmpty()
+                        binding.tvGreetingTitle.text = if (name.isNotBlank()) "Chào $name!" else "Xin chào!"
+                        binding.tvHomeAvatarInitials.text = user?.initials ?: "ND"
                     }
                 }
                 launch {
@@ -126,6 +131,10 @@ class HomeFragment : Fragment() {
 
                         // Update recent items preview (first 4)
                         recentAdapter.submitList(items.take(4))
+
+                        // Notification alert badge: ONLY show when there are items AND there are broken devices
+                        val hasAlerts = items.isNotEmpty() && broken > 0
+                        binding.viewNotifBadge.visibility = if (hasAlerts) View.VISIBLE else View.GONE
                     }
                 }
             }
