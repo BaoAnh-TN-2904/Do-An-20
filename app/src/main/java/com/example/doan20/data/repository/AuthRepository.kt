@@ -1,6 +1,8 @@
 package com.example.doan20.data.repository
 
 import android.util.Log
+import com.example.doan20.data.model.Item
+import com.example.doan20.data.model.ItemStatus
 import com.example.doan20.data.model.User
 import com.example.doan20.data.model.UserRole
 import com.example.doan20.data.mqtt.MqttManager
@@ -23,6 +25,15 @@ object AuthRepository {
         roomName = "Hệ thống Quản trị Trung tâm",
         email = "admin@doan20.local",
         uid = "admin_01"
+    )
+
+    val SAMPLE_USER = User(
+        username = "user",
+        name = "Nguyễn Văn Nam",
+        role = UserRole.USER,
+        roomName = "Phòng 302 • Căn hộ Harmony",
+        email = "user@doan20.local",
+        uid = "sample_user_01"
     )
 
     private val _currentUser = MutableStateFlow<User?>(null)
@@ -144,14 +155,29 @@ object AuthRepository {
         }
 
         // Shortcut 1: Admin
-        if (cleanUser == "admin" || cleanUser == "admin@gmail.com") {
-            if (cleanPass == "123") {
+        if (cleanUser == "admin" || cleanUser == "admin@gmail.com" || cleanUser == "admin@doan20.local") {
+            if (cleanPass == "123" || cleanPass == "123456" || cleanPass == "admin123") {
                 _currentUser.value = SAMPLE_ADMIN
+                saveUserToFirestore(SAMPLE_ADMIN) {}
                 MqttManager.connect(clientIdPrefix = "admin")
                 onComplete(Result.success(SAMPLE_ADMIN))
                 return
             } else {
                 onComplete(Result.failure(Exception("Mật khẩu Admin không đúng! (Mặc định: 123)")))
+                return
+            }
+        }
+
+        // Shortcut 2: Sample User
+        if (cleanUser == "user" || cleanUser == "user@gmail.com" || cleanUser == "user01" || cleanUser == "user@doan20.local") {
+            if (cleanPass == "123" || cleanPass == "123456") {
+                _currentUser.value = SAMPLE_USER
+                syncUserToFirebase(SAMPLE_USER, cleanPass)
+                MqttManager.connect(clientIdPrefix = SAMPLE_USER.username)
+                onComplete(Result.success(SAMPLE_USER))
+                return
+            } else {
+                onComplete(Result.failure(Exception("Mật khẩu User mẫu không đúng! (Mặc định: 123456 hoặc 123)")))
                 return
             }
         }
@@ -191,6 +217,7 @@ object AuthRepository {
                                     uid = cleanUser
                                 )
                                 _currentUser.value = fallback
+                                saveUserToFirestore(fallback) {}
                                 MqttManager.connect(clientIdPrefix = cleanUser)
                                 onComplete(Result.success(fallback))
                             } else {
@@ -210,6 +237,7 @@ object AuthRepository {
                 uid = cleanUser
             )
             _currentUser.value = fallback
+            saveUserToFirestore(fallback) {}
             MqttManager.connect(clientIdPrefix = cleanUser)
             onComplete(Result.success(fallback))
         }
@@ -231,6 +259,102 @@ object AuthRepository {
         } catch (e: Exception) {
             Log.e(TAG, "Error saving to Firestore", e)
             onDone()
+        }
+    }
+
+    private fun syncUserToFirebase(user: User, pass: String) {
+        saveUserToFirestore(user) {
+            seedSampleItemsIfEmpty(user.username)
+        }
+
+        try {
+            auth.signInWithEmailAndPassword(user.email, pass)
+                .addOnSuccessListener {
+                    seedSampleItemsIfEmpty(user.username)
+                }
+                .addOnFailureListener {
+                    auth.createUserWithEmailAndPassword(user.email, pass)
+                        .addOnCompleteListener {
+                            seedSampleItemsIfEmpty(user.username)
+                        }
+                }
+        } catch (e: Exception) {
+            Log.w(TAG, "Firebase auth sync exception: ${e.message}")
+            seedSampleItemsIfEmpty(user.username)
+        }
+    }
+
+    private fun seedSampleItemsIfEmpty(username: String) {
+        try {
+            firestore.collection("users")
+                .document(username)
+                .collection("items")
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    if (snapshot == null || snapshot.isEmpty) {
+                        val sampleItems = listOf(
+                            Item(
+                                id = "item_lamp_01",
+                                name = "Đèn bàn học",
+                                category = "Điện tử",
+                                imageType = "lamp",
+                                status = ItemStatus.ACTIVE,
+                                hasSwitch = true,
+                                isOn = true,
+                                price = 250000L,
+                                buyDate = "10/01/2024",
+                                pinConfig = "GPIO 18",
+                                notes = "Đèn LED bảo vệ thị lực, kết nối chân GPIO 18"
+                            ),
+                            Item(
+                                id = "item_fan_01",
+                                name = "Quạt bàn Senko",
+                                category = "Điện tử",
+                                imageType = "fan",
+                                status = ItemStatus.ACTIVE,
+                                hasSwitch = true,
+                                isOn = false,
+                                price = 380000L,
+                                buyDate = "20/02/2024",
+                                pinConfig = "GPIO 23",
+                                notes = "Quạt làm mát bàn làm việc"
+                            ),
+                            Item(
+                                id = "item_desk_01",
+                                name = "Bàn làm việc gỗ sồi",
+                                category = "Nội thất",
+                                imageType = "desk",
+                                status = ItemStatus.ACTIVE,
+                                hasSwitch = false,
+                                isOn = false,
+                                price = 1200000L,
+                                buyDate = "15/09/2023",
+                                notes = "Bàn làm việc 1m2 góc phòng"
+                            ),
+                            Item(
+                                id = "item_cooker_01",
+                                name = "Nồi cơm điện mini",
+                                category = "Điện tử",
+                                imageType = "cooker",
+                                status = ItemStatus.BROKEN,
+                                hasSwitch = false,
+                                isOn = false,
+                                price = 450000L,
+                                buyDate = "05/11/2023",
+                                notes = "Nắp nồi bị lỏng chốt đóng ngắt, cần bảo dưỡng sửa chữa"
+                            )
+                        )
+                        for (item in sampleItems) {
+                            firestore.collection("users")
+                                .document(username)
+                                .collection("items")
+                                .document(item.id)
+                                .set(item)
+                        }
+                    }
+                }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error seeding sample items", e)
         }
     }
 

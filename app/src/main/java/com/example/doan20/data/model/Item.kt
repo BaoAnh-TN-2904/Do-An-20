@@ -1,6 +1,7 @@
 package com.example.doan20.data.model
 
 import com.example.doan20.R
+import com.google.firebase.firestore.PropertyName
 import java.io.Serializable
 
 data class Item(
@@ -10,7 +11,9 @@ data class Item(
     val imageType: String = "default",
     val imageUri: String? = null,
     val status: ItemStatus = ItemStatus.ACTIVE,
+    @get:PropertyName("hasSwitch")
     val hasSwitch: Boolean = false,
+    @get:PropertyName("isOn")
     val isOn: Boolean = false,
     val price: Long? = null,
     val buyDate: String? = null,

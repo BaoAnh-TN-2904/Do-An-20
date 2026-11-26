@@ -12,7 +12,7 @@ object AdminRepository {
     private const val TAG = "AdminRepository"
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
-    // Admin account starts completely clean/empty ("trắng")
+    // Admin account starts with an empty list until synced from Firestore
     private val _usersFlow = MutableStateFlow<List<AdminUser>>(emptyList())
     val usersFlow: StateFlow<List<AdminUser>> = _usersFlow.asStateFlow()
 

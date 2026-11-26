@@ -12,9 +12,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="88dp">
+        android:paddingBottom="24dp">
 
-        <!-- Top Header Bar matching Figma 01_Dashboard -->
+        <!-- Top Header Bar -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="56dp"
@@ -47,13 +47,30 @@
                         tools:text="MA" />
                 </FrameLayout>
 
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="10dp"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/border"
+                    app:strokeWidth="1dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/app_logo"
+                        android:contentDescription="@null" />
+                </com.google.android.material.card.MaterialCardView>
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
+                    android:layout_marginStart="8dp"
                     android:text="@string/app_name"
                     android:textColor="@color/primary_blue"
-                    android:textSize="22sp"
+                    android:textSize="20sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -118,7 +135,7 @@
                 android:textSize="14sp" />
         </LinearLayout>
 
-        <!-- 3 Stats Cards matching Figma Mockup -->
+        <!-- Summary Stats Cards -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -170,7 +187,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Tổng vật dụng"
+                        android:includeFontPadding="true"
+                        android:paddingTop="2dp"
+                        android:text="@string/stat_total"
                         android:textColor="#E0E7FF"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -222,7 +241,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Còn dùng"
+                        android:includeFontPadding="true"
+                        android:paddingTop="2dp"
+                        android:text="@string/stat_active"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -274,7 +295,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Hỏng"
+                        android:includeFontPadding="true"
+                        android:paddingTop="2dp"
+                        android:text="@string/stat_broken"
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -283,19 +306,26 @@
         </LinearLayout>
 
         <!-- Section Header: Recent Items -->
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             android:paddingHorizontal="20dp"
-            android:paddingTop="26dp"
-            android:paddingBottom="10dp">
+            android:paddingTop="28dp"
+            android:paddingBottom="12dp">
 
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/tvRecentItemsTitle"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:text="Vật dụng gần đây"
+                android:layout_weight="1"
+                android:includeFontPadding="true"
+                android:paddingTop="6dp"
+                android:paddingBottom="4dp"
+                android:text="@string/section_recent_items"
                 android:textColor="@color/text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -303,12 +333,13 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:text="Phòng của bạn"
+                android:includeFontPadding="true"
+                android:paddingTop="6dp"
+                android:paddingBottom="4dp"
+                android:text="@string/room_of_you"
                 android:textColor="@color/text_muted"
                 android:textSize="13sp" />
-        </RelativeLayout>
+        </LinearLayout>
 
         <!-- Recent Items RecyclerView -->
         <androidx.recyclerview.widget.RecyclerView

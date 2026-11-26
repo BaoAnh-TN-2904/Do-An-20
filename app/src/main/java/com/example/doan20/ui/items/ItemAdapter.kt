@@ -19,6 +19,10 @@ class ItemAdapter(
     private val onSwitchToggle: (Item, Boolean) -> Unit
 ) : ListAdapter<Item, ItemAdapter.ItemViewHolder>(ItemDiffCallback()) {
 
+    companion object {
+        private const val PAYLOAD_SWITCH = "PAYLOAD_SWITCH"
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         val binding = ItemItemBinding.inflate(
             LayoutInflater.from(parent.context),
@@ -32,11 +36,47 @@ class ItemAdapter(
         holder.bind(getItem(position))
     }
 
+    override fun onBindViewHolder(
+        holder: ItemViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if (payloads.isNotEmpty() && payloads.contains(PAYLOAD_SWITCH)) {
+            holder.bindSwitchOnly(getItem(position))
+        } else {
+            super.onBindViewHolder(holder, position, payloads)
+        }
+    }
+
     inner class ItemViewHolder(
         private val binding: ItemItemBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        private var currentItem: Item? = null
+
+        init {
+            binding.cardItem.setOnClickListener {
+                currentItem?.let { onItemClick(it) }
+            }
+
+            binding.tvStatusBadge.setOnClickListener {
+                currentItem?.let { onStatusClick(it) }
+            }
+
+            // Only trigger callback when the user physically presses / toggles the switch
+            binding.switchPower.setOnCheckedChangeListener { buttonView, isChecked ->
+                if (buttonView.isPressed) {
+                    currentItem?.let { item ->
+                        if (item.isOn != isChecked) {
+                            onSwitchToggle(item, isChecked)
+                        }
+                    }
+                }
+            }
+        }
+
         fun bind(item: Item) {
+            currentItem = item
             val context = binding.root.context
 
             // Title & Category
@@ -50,29 +90,29 @@ class ItemAdapter(
             binding.tvStatusBadge.applyStatusBadge(item.status)
             binding.layoutBrokenWarning.visibility = if (item.status == ItemStatus.BROKEN) View.VISIBLE else View.GONE
 
-            // Switch Control for electronic items (Figma 01_Dashboard & 02_ItemList)
+            // Power switch control for electronic items
             if (item.hasSwitch) {
                 binding.switchPower.visibility = View.VISIBLE
                 binding.switchPower.trackDecorationDrawable = null
                 binding.switchPower.thumbIconDrawable = null
                 binding.switchPower.trackTintList = ContextCompat.getColorStateList(context, R.color.switch_track_selector)
                 binding.switchPower.thumbTintList = ContextCompat.getColorStateList(context, R.color.switch_thumb_selector)
-                binding.switchPower.setOnCheckedChangeListener(null)
-                binding.switchPower.isChecked = item.isOn
-                binding.switchPower.setOnCheckedChangeListener { _, isChecked ->
-                    onSwitchToggle(item, isChecked)
+
+                // Only set if different to prevent interrupting running animation
+                if (binding.switchPower.isChecked != item.isOn) {
+                    binding.switchPower.isChecked = item.isOn
                 }
             } else {
                 binding.switchPower.visibility = View.GONE
             }
+        }
 
-            // Click Listeners
-            binding.cardItem.setOnClickListener {
-                onItemClick(item)
-            }
-
-            binding.tvStatusBadge.setOnClickListener {
-                onStatusClick(item)
+        fun bindSwitchOnly(item: Item) {
+            currentItem = item
+            if (item.hasSwitch) {
+                if (binding.switchPower.isChecked != item.isOn) {
+                    binding.switchPower.isChecked = item.isOn
+                }
             }
         }
     }
@@ -84,6 +124,14 @@ class ItemAdapter(
 
         override fun areContentsTheSame(oldItem: Item, newItem: Item): Boolean {
             return oldItem == newItem
+        }
+
+        override fun getChangePayload(oldItem: Item, newItem: Item): Any? {
+            return if (oldItem.id == newItem.id && oldItem.copy(isOn = newItem.isOn) == newItem) {
+                PAYLOAD_SWITCH
+            } else {
+                null
+            }
         }
     }
 }

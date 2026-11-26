@@ -18,7 +18,7 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <!-- Warning Trash Icon (Figma 08_DeleteDialog) -->
+        <!-- Warning Trash Icon -->
         <ImageView
             android:layout_width="56dp"
             android:layout_height="56dp"

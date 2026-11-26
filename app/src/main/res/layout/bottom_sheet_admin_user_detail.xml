@@ -34,7 +34,7 @@
             android:textSize="21sp"
             android:textStyle="bold" />
 
-        <!-- User Profile Card (Figma 67:416) -->
+        <!-- User Profile Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -258,7 +258,7 @@
             android:layout_marginTop="8dp"
             android:orientation="vertical" />
 
-        <!-- Info Callout (Figma 67:416) -->
+        <!-- Info Callout -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

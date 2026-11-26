@@ -99,7 +99,7 @@
                     android:textStyle="bold"
                     tools:text="● Còn dùng" />
 
-                <!-- Smart Switch (Figma Toggle Bật: #2563EB, Toggle Tắt: #D0D5DD) -->
+                <!-- Power Control Switch -->
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/switchPower"
                     android:layout_width="wrap_content"
@@ -117,7 +117,7 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <!-- Warning Banner for broken item (Figma 10_SearchResults) -->
+        <!-- Warning Banner for Broken Item -->
         <LinearLayout
             android:id="@+id/layoutBrokenWarning"
             android:layout_width="match_parent"

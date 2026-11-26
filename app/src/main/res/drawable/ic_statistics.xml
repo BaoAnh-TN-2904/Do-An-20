@@ -3,25 +3,42 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+    <!-- Trend Line -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#2563EB"
-        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M18,20V10" />
+        android:pathData="M3.5,15.5 L8,11 L12,13.5 L20,6" />
+
+    <!-- Vertical Bar Chart Lines Underneath -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#2563EB"
-        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M12,20V4" />
+        android:pathData="M5,20.5 V18.5" />
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#2563EB"
-        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M6,20V14" />
+        android:pathData="M9,20.5 V14.5" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M13,20.5 V16.5" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M17,20.5 V10.5" />
 </vector>

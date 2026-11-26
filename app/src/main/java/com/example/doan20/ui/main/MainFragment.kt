@@ -5,6 +5,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -37,13 +39,31 @@ class MainFragment : Fragment() {
         return binding.root
     }
 
+    private var isSelectingFromNav = false
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupWindowInsets()
         setupViewPager()
         setupBottomNavigation()
         observeSelectedTab()
         setupBackHandler()
+    }
+
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            binding.viewPagerMain.setPadding(0, systemBars.top, 0, 0)
+            binding.bottomNavigation.setPadding(
+                0,
+                0,
+                0,
+                systemBars.bottom
+            )
+            insets
+        }
+        ViewCompat.requestApplyInsets(binding.root)
     }
 
     private fun setupViewPager() {
@@ -55,6 +75,7 @@ class MainFragment : Fragment() {
         binding.viewPagerMain.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
+                if (isSelectingFromNav) return
                 val targetMenuId = when (position) {
                     0 -> R.id.nav_home
                     1 -> R.id.nav_items
@@ -63,7 +84,7 @@ class MainFragment : Fragment() {
                     else -> R.id.nav_home
                 }
                 if (binding.bottomNavigation.selectedItemId != targetMenuId) {
-                    binding.bottomNavigation.selectedItemId = targetMenuId
+                    binding.bottomNavigation.menu.findItem(targetMenuId)?.isChecked = true
                 }
             }
         })
@@ -79,7 +100,9 @@ class MainFragment : Fragment() {
                 else -> 0
             }
             if (binding.viewPagerMain.currentItem != targetPosition) {
-                binding.viewPagerMain.setCurrentItem(targetPosition, true)
+                isSelectingFromNav = true
+                binding.viewPagerMain.setCurrentItem(targetPosition, false)
+                isSelectingFromNav = false
             }
             true
         }
@@ -94,7 +117,17 @@ class MainFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.selectedTab.collect { tabIndex ->
                     if (tabIndex in 0..3 && binding.viewPagerMain.currentItem != tabIndex) {
-                        binding.viewPagerMain.setCurrentItem(tabIndex, true)
+                        isSelectingFromNav = true
+                        binding.viewPagerMain.setCurrentItem(tabIndex, false)
+                        isSelectingFromNav = false
+                        val targetMenuId = when (tabIndex) {
+                            0 -> R.id.nav_home
+                            1 -> R.id.nav_items
+                            2 -> R.id.nav_statistics
+                            3 -> R.id.nav_profile
+                            else -> R.id.nav_home
+                        }
+                        binding.bottomNavigation.menu.findItem(targetMenuId)?.isChecked = true
                     }
                 }
             }
@@ -105,7 +138,7 @@ class MainFragment : Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (binding.viewPagerMain.currentItem != 0) {
-                    binding.viewPagerMain.setCurrentItem(0, true)
+                    binding.viewPagerMain.setCurrentItem(0, false)
                 } else {
                     isEnabled = false
                     requireActivity().onBackPressedDispatcher.onBackPressed()

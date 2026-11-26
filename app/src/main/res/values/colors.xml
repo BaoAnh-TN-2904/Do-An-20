@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Brand / Primary Colors (Figma 01_Dashboard #2563EB) -->
+    <!-- Brand / Primary Colors -->
     <color name="primary_blue">#2563EB</color>
     <color name="primary_blue_dark">#1D4ED8</color>
     <color name="primary_blue_light">#DBEAFE</color>
     <color name="primary_blue_container">#EDF3FF</color>
     <color name="primary_blue_tint">#F0F6FF</color>
 
-    <!-- Base Surface & Background (Figma #F6F8FC & #FFFFFF) -->
+    <!-- Base Surface & Background -->
     <color name="background">#F6F8FC</color>
     <color name="surface">#FFFFFF</color>
     <color name="surface_variant">#F1F5F9</color>
     <color name="border">#E6EBF2</color>
     <color name="border_light">#E6EBF2</color>
 
-    <!-- Typography (Figma #17243B & #748096) -->
+    <!-- Typography -->
     <color name="text_primary">#17243B</color>
     <color name="text_secondary">#748096</color>
     <color name="text_muted">#748096</color>
     <color name="text_on_primary">#FFFFFF</color>
     <color name="stat_badge_total_sub">#DFE9FF</color>
 
-    <!-- Status: Còn dùng (Figma Green #168451, Bg #EAF7EF) -->
+    <!-- Status: Active -->
     <color name="status_active">#168451</color>
     <color name="status_active_dot">#168451</color>
     <color name="status_active_bg">#EAF7EF</color>
     <color name="status_active_border">#D1FAE5</color>
 
-    <!-- Status: Hỏng (Figma Red #D44242, Bg #FFF0F0) -->
+    <!-- Status: Broken -->
     <color name="status_broken">#D44242</color>
     <color name="status_broken_dot">#D44242</color>
     <color name="status_broken_bg">#FFF0F0</color>

@@ -76,7 +76,7 @@ class ItemsFragment : Fragment() {
                 viewModel.setSearchQuery(query)
                 binding.btnClearSearch.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
 
-                // Toggle between normal header (02_ItemList) and search header (10_SearchResults)
+                // Toggle between default title bar and active search header
                 if (query.isNotBlank()) {
                     binding.tvItemsTitle.visibility = View.GONE
                     binding.btnAddItem.visibility = View.GONE
@@ -104,7 +104,7 @@ class ItemsFragment : Fragment() {
             findNavController().navigate(R.id.nav_add_item)
         }
 
-        // Navigate to full-screen FilterFragment (Figma 09_Filter)
+        // Open item filter screen
         binding.btnFilterSliders.setOnClickListener {
             findNavController().navigate(R.id.nav_filter)
         }
@@ -133,11 +133,11 @@ class ItemsFragment : Fragment() {
                         val query = viewModel.searchQuery.value
 
                         if (query.isNotBlank()) {
-                            // Header matching Figma 10_SearchResults
+                            // Search results header
                             binding.tvTotalItemHeader.text = "Kết quả tìm kiếm"
                             binding.tvShowingCount.text = "${items.size} kết quả phù hợp cho \"$query\""
                         } else {
-                            // Header matching Figma 02_ItemList
+                            // Default item list header
                             binding.tvTotalItemHeader.text = "$total vật dụng"
                             binding.tvShowingCount.text = "Hiển thị ${items.size} / $total vật dụng"
                         }

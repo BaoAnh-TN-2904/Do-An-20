@@ -73,7 +73,7 @@ class HomeFragment : Fragment() {
             viewModel.selectTab(3)
         }
 
-        // Notification sheet
+        // Notification bell opens NotificationsBottomSheet
         binding.btnNotification.setOnClickListener {
             NotificationsBottomSheet.newInstance().show(
                 childFragmentManager,
@@ -81,7 +81,7 @@ class HomeFragment : Fragment() {
             )
         }
 
-        // Stats card clicks: Card total smoothly switches to Statistics tab
+        // Stats card clicks: Card total switches to Statistics tab
         binding.cardStatTotal.setOnClickListener {
             viewModel.selectTab(2)
         }

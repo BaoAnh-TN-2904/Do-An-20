@@ -65,7 +65,7 @@ class StatisticsFragment : Fragment() {
                     binding.tvBrokenCountStat.text = broken.toString()
                     binding.tvBrokenPercentStat.text = "$brokenRate%"
 
-                    // 3. Category Breakdown matching Figma
+                    // 3. Category breakdown
                     val furnitureCount = items.count { it.category.equals("Nội thất", ignoreCase = true) }
                     val electronicsCount = items.count { it.category.equals("Điện tử", ignoreCase = true) }
                     val studyCount = items.count { it.category.contains("học tập", ignoreCase = true) || it.category.contains("cá nhân", ignoreCase = true) }

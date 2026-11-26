@@ -8,7 +8,7 @@
     <string name="nav_profile">Cá nhân</string>
     <string name="nav_admin">Quản trị</string>
 
-    <!-- Home Screen (Figma 01_Dashboard) -->
+    <!-- Home Screen -->
     <string name="greeting_title">Xin chào!</string>
     <string name="greeting_subtitle">Phòng gọn gàng, mọi thứ trong tầm tay.</string>
     <string name="stat_total">Tổng vật dụng</string>
@@ -19,7 +19,7 @@
     <string name="action_see_all">Xem tất cả vật dụng</string>
     <string name="action_add_item">+  Thêm vật dụng</string>
 
-    <!-- Items Screen (Figma 02_ItemList) -->
+    <!-- Items Screen -->
     <string name="items_screen_title">Vật dụng</string>
     <string name="search_hint">Tìm tên vật dụng...</string>
     <string name="filter_all">Tất cả</string>
@@ -37,7 +37,7 @@
     <string name="category_personal">Đồ dùng cá nhân</string>
     <string name="category_other">Khác</string>
 
-    <!-- Add & Edit Item Screen (Figma 04_AddItem & 05_EditItem & 53:8) -->
+    <!-- Add & Edit Item Screen -->
     <string name="add_item_title">Thêm vật dụng</string>
     <string name="edit_item_title">Sửa vật dụng</string>
     <string name="image_picker_prompt">Thêm ảnh vật dụng</string>
@@ -67,7 +67,7 @@
     <string name="msg_item_saved">Đã lưu vật dụng thành công!</string>
     <string name="msg_item_updated">Đã cập nhật thay đổi!</string>
 
-    <!-- Detail Screen (Figma 03_ItemDetail) -->
+    <!-- Detail Screen -->
     <string name="detail_title">Chi tiết vật dụng</string>
     <string name="action_edit">Sửa</string>
     <string name="action_delete">Xóa</string>
@@ -76,7 +76,7 @@
     <string name="dialog_confirm_delete">Xóa</string>
     <string name="msg_item_deleted">Đã xóa vật dụng</string>
 
-    <!-- Filter BottomSheet (Figma 09_Filter) -->
+    <!-- Filter Screen -->
     <string name="filter_title">Bộ lọc</string>
     <string name="filter_subtitle">Tìm đúng vật dụng theo loại và tình trạng bạn cần.</string>
     <string name="filter_type_header">Loại</string>
@@ -84,13 +84,13 @@
     <string name="filter_tip">Chỉ hiển thị vật dụng phù hợp với lựa chọn của bạn.</string>
     <string name="action_apply_filter">Áp dụng</string>
 
-    <!-- Statistics Screen (Figma 06_Statistics) -->
+    <!-- Statistics Screen -->
     <string name="statistics_title">Thống kê</string>
     <string name="statistics_subtitle">Hiểu rõ vật dụng trong phòng của bạn.</string>
     <string name="stats_condition_title">Tình trạng vật dụng</string>
     <string name="stats_breakdown_title">Phân bổ theo loại</string>
 
-    <!-- Profile Screen (Figma 07_Profile) -->
+    <!-- Profile Screen -->
     <string name="profile_title">Cá nhân</string>
     <string name="profile_name">Người dùng</string>
     <string name="profile_email">Chưa đăng nhập</string>
@@ -106,7 +106,7 @@
     <string name="action_logout">Đăng xuất</string>
     <string name="app_version">Gọn Phòng · Phiên bản 1.0.0</string>
 
-    <!-- Admin Suite (Figma 67:331, 67:416, 67:493) -->
+    <!-- Admin Screens -->
     <string name="admin_role_badge">Quản trị</string>
     <string name="admin_overview_title">Tổng quan admin</string>
     <string name="admin_overview_subtitle">Người dùng và thiết bị trong tầm tay.</string>

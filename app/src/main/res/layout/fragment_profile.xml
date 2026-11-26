@@ -12,9 +12,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="88dp">
+        android:paddingBottom="24dp">
 
-        <!-- Top Header matching Figma 07_Profile -->
+        <!-- Top Header -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -248,7 +248,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Room Memory Card matching Figma -->
+        <!-- Room Memory Card -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -301,7 +301,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Admin Dashboard Entry (Figma 67:331) -->
+        <!-- Admin Dashboard Entry -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAdminDashboard"
             style="@style/Widget.App.Button.Outlined"

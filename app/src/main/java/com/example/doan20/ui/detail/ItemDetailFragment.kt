@@ -11,6 +11,8 @@ import android.view.Window
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.os.bundleOf
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -60,9 +62,18 @@ class ItemDetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupWindowInsets()
         setupOwnerUI()
         setupListeners()
         observeItem()
+    }
+
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, systemBars.top, 0, systemBars.bottom)
+            insets
+        }
     }
 
     private fun setupOwnerUI() {
@@ -85,7 +96,7 @@ class ItemDetailFragment : Fragment() {
             findNavController().popBackStack()
         }
 
-        // Sửa button -> Navigate to Edit Screen (Figma 05_EditItem)
+        // Navigate to item edit screen
         binding.btnEdit.setOnClickListener {
             currentItemId?.let { id ->
                 findNavController().navigate(
@@ -95,7 +106,7 @@ class ItemDetailFragment : Fragment() {
             }
         }
 
-        // Xóa button -> Show custom Figma dialog (Figma 08_DeleteDialog)
+        // Confirm deletion before removing item
         binding.btnDelete.setOnClickListener {
             showCustomDeleteDialog()
         }
@@ -122,7 +133,7 @@ class ItemDetailFragment : Fragment() {
     }
 
     /**
-     * Custom Delete Dialog matching Figma 08_DeleteDialog
+     * Displays the confirmation dialog before deleting an item.
      */
     private fun showCustomDeleteDialog() {
         val item = currentItem ?: return
@@ -218,7 +229,7 @@ class ItemDetailFragment : Fragment() {
         binding.tvDetailName.text = item.name
         binding.tvDetailCategory.text = item.category
 
-        // Status Badge with dot matching Figma 03_ItemDetail
+        // Status badge
         binding.tvDetailStatus.applyStatusBadge(item.status)
 
         // Item Image
@@ -235,10 +246,8 @@ class ItemDetailFragment : Fragment() {
         // Buy Date
         binding.tvDetailDate.text = item.buyDate ?: "15/09/2025"
 
-        // Notes
-        binding.tvDetailNotes.text = item.notes?.ifBlank {
-            "Đèn không sáng, cần kiểm tra bóng và dây nguồn."
-        } ?: "Đèn không sáng, cần kiểm tra bóng và dây nguồn."
+        // Notes: Chỉ hiển thị ghi chú của user, nếu không có thì để trống
+        binding.tvDetailNotes.text = item.notes?.trim().orEmpty()
     }
 
     override fun onDestroyView() {

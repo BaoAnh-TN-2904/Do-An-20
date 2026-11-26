@@ -12,9 +12,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="88dp">
+        android:paddingBottom="24dp">
 
-        <!-- Top Header matching Figma 06_Statistics -->
+        <!-- Top Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

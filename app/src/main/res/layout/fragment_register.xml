@@ -51,24 +51,23 @@
                 android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- Brand Icon / Accent Pill -->
+        <!-- Brand Logo -->
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
+            android:layout_width="68dp"
+            android:layout_height="68dp"
             android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@color/primary_blue_container"
+            app:cardBackgroundColor="@color/surface"
             app:cardCornerRadius="18dp"
             app:cardElevation="0dp"
-            app:strokeColor="#BFDBFE"
+            app:strokeColor="@color/border"
             app:strokeWidth="1dp">
 
             <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_users_round"
-                android:contentDescription="@null"
-                app:tint="@color/primary_blue" />
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:src="@drawable/app_logo"
+                android:contentDescription="@string/app_name" />
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
@@ -209,6 +208,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:endIconMode="password_toggle"
+                    app:endIconDrawable="@drawable/selector_password_visibility"
+                    app:endIconTint="@color/selector_password_icon_tint"
+                    app:endIconContentDescription="Hiện/Ẩn mật khẩu"
                     app:startIconDrawable="@drawable/ic_lock"
                     app:startIconTint="@color/primary_blue">
 
@@ -239,6 +241,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:endIconMode="password_toggle"
+                    app:endIconDrawable="@drawable/selector_password_visibility"
+                    app:endIconTint="@color/selector_password_icon_tint"
+                    app:endIconContentDescription="Hiện/Ẩn mật khẩu"
                     app:startIconDrawable="@drawable/ic_lock"
                     app:startIconTint="@color/primary_blue">
 

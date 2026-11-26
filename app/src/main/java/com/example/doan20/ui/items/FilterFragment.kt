@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -12,7 +14,7 @@ import com.example.doan20.databinding.FragmentFilterBinding
 import com.example.doan20.ui.viewmodel.ItemViewModel
 
 /**
- * Full screen filter page matching Figma 09_Filter
+ * Full-screen filter view for filtering items by category and status.
  */
 class FilterFragment : Fragment() {
 
@@ -35,6 +37,7 @@ class FilterFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupWindowInsets()
 
         // Read current filter state
         tempCategory = viewModel.categoryFilter.value
@@ -43,6 +46,14 @@ class FilterFragment : Fragment() {
         updateCategoryUI()
         updateStatusUI()
         setupListeners()
+    }
+
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, systemBars.top, 0, systemBars.bottom)
+            insets
+        }
     }
 
     private fun setupListeners() {

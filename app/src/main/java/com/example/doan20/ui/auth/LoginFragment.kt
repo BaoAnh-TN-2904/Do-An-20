@@ -5,6 +5,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.NavOptions
@@ -32,17 +34,15 @@ class LoginFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupQuickFill()
+        setupWindowInsets()
         setupListeners()
     }
 
-    private fun setupQuickFill() {
-        // Quick Fill for Admin account
-        binding.cardQuickAdmin.setOnClickListener {
-            binding.etUsername.setText("admin")
-            binding.etPassword.setText("123")
-            binding.tilUsername.error = null
-            binding.tilPassword.error = null
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, systemBars.top, 0, systemBars.bottom)
+            insets
         }
     }
 

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="24dp"
+    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="16dp"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Status Icon Container -->
+        <FrameLayout
+            android:layout_width="64dp"
+            android:layout_height="64dp">
+
+            <!-- Loading Spinner -->
+            <ProgressBar
+                android:id="@+id/pbProvisionLoading"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:indeterminateTint="@color/primary_blue" />
+
+            <!-- Success Icon -->
+            <ImageView
+                android:id="@+id/ivProvisionSuccess"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_check_circle"
+                android:visibility="gone"
+                app:tint="@color/status_active"
+                android:contentDescription="@null" />
+
+            <!-- Warning / Timeout Icon -->
+            <ImageView
+                android:id="@+id/ivProvisionWarning"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_alert_circle"
+                android:visibility="gone"
+                app:tint="#F59E0B"
+                android:contentDescription="@null" />
+
+            <!-- Error / Full GPIO Icon -->
+            <ImageView
+                android:id="@+id/ivProvisionError"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_alert_delete"
+                android:visibility="gone"
+                app:tint="@color/danger_red"
+                android:contentDescription="@null" />
+        </FrameLayout>
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tvProvisionTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text="Kiểm tra kết nối ESP32"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- Description / Status Detail -->
+        <TextView
+            android:id="@+id/tvProvisionMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:lineSpacingExtra="3dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            tools:text="Đang gửi yêu cầu khởi tạo chân GPIO 18 tới vi điều khiển ESP32..." />
+
+        <!-- Action Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnProvisionAction"
+            style="@style/Widget.App.Button.Primary"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="20dp"
+            android:text="Hủy"
+            android:textSize="14sp"
+            app:cornerRadius="12dp" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

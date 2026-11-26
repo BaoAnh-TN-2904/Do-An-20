@@ -46,14 +46,14 @@
         android:label="Trang chính"
         tools:layout="@layout/fragment_main" />
 
-    <!-- Filter Screen (Figma 09_Filter) -->
+    <!-- Filter Screen -->
     <fragment
         android:id="@+id/nav_filter"
         android:name="com.example.doan20.ui.items.FilterFragment"
         android:label="Bộ lọc"
         tools:layout="@layout/fragment_filter" />
 
-    <!-- Detail Screen (Figma 03_ItemDetail & Admin Chi tiết thiết bị) -->
+    <!-- Item & Device Detail Screen -->
     <fragment
         android:id="@+id/nav_detail"
         android:name="com.example.doan20.ui.detail.ItemDetailFragment"

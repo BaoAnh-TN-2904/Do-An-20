@@ -14,7 +14,7 @@
         android:orientation="vertical"
         android:paddingBottom="48dp">
 
-        <!-- Top Header matching Figma 67:331 -->
+        <!-- Top Header -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="56dp"
@@ -115,7 +115,7 @@
                 android:textSize="13sp" />
         </LinearLayout>
 
-        <!-- 2 Stats Cards (Figma 67:331) -->
+        <!-- Overview Stats Cards -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

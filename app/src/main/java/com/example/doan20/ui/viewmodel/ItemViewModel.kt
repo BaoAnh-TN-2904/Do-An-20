@@ -92,7 +92,8 @@ class ItemViewModel : ViewModel() {
                         (item.notes?.contains(query, ignoreCase = true) == true)
             }
             val matchesStatus = status == null || item.status == status
-            val matchesCategory = category == null || item.category.equals(category, ignoreCase = true)
+            val matchesCategory =
+                category == null || item.category.equals(category, ignoreCase = true)
             matchesQuery && matchesStatus && matchesCategory
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())

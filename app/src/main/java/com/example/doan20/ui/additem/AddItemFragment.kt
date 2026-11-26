@@ -1,22 +1,35 @@
 package com.example.doan20.ui.additem
 
 import android.app.DatePickerDialog
+import android.app.Dialog
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.widget.ArrayAdapter
+import android.widget.ImageView
+import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.doan20.R
 import com.example.doan20.data.model.Item
 import com.example.doan20.data.model.ItemStatus
 import com.example.doan20.databinding.FragmentAddItemBinding
 import com.example.doan20.ui.viewmodel.ItemViewModel
+import com.google.android.material.button.MaterialButton
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.UUID
 
@@ -52,17 +65,26 @@ class AddItemFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupWindowInsets()
         setupDropdowns()
         setupDatePicker()
         setupImageSelector()
         setupListeners()
 
-        // Check if in edit mode (Figma 05_EditItem)
+        // Populate fields when editing an existing item
         editingItemId?.let { id ->
             editingItem = viewModel.getItem(id)
             editingItem?.let { item ->
                 populateItemForEdit(item)
             }
+        }
+    }
+
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(0, systemBars.top, 0, systemBars.bottom)
+            insets
         }
     }
 
@@ -119,7 +141,7 @@ class AddItemFragment : Fragment() {
 
         binding.actCategory.setOnItemClickListener { _, _, position, _ ->
             val selected = categories[position]
-            // Show GPIO 2-column input only when category is 'Điện tử' (matching Figma)
+            // Show GPIO configuration inputs only for electronic items
             if (selected.equals("Điện tử", ignoreCase = true)) {
                 binding.layoutConditionalGpio.visibility = View.VISIBLE
                 if (binding.actPinType.text.isNullOrBlank()) {
@@ -268,8 +290,8 @@ class AddItemFragment : Fragment() {
             }
         }
 
-        if (editingItemId != null && editingItem != null) {
-            // Update existing item (Figma 05_EditItem)
+        val savedItem = if (editingItemId != null && editingItem != null) {
+            // Update existing item
             val updated = editingItem!!.copy(
                 name = name,
                 category = category,
@@ -283,8 +305,9 @@ class AddItemFragment : Fragment() {
             )
             viewModel.updateItem(updated)
             Toast.makeText(requireContext(), R.string.msg_item_updated, Toast.LENGTH_SHORT).show()
+            updated
         } else {
-            // Add new item (Figma 04_AddItem)
+            // Create new item
             val newItem = Item(
                 id = UUID.randomUUID().toString(),
                 name = name,
@@ -300,9 +323,126 @@ class AddItemFragment : Fragment() {
             )
             viewModel.addItem(newItem)
             Toast.makeText(requireContext(), R.string.msg_item_saved, Toast.LENGTH_SHORT).show()
+            newItem
         }
 
-        findNavController().popBackStack()
+        val gpioPin = com.example.doan20.data.repository.ItemRepository.extractGpioPin(savedItem.pinConfig)
+        if (savedItem.hasSwitch && gpioPin != null) {
+            showEsp32ProvisionDialog(savedItem, gpioPin)
+        } else {
+            findNavController().popBackStack()
+        }
+    }
+
+    /**
+     * Popup dialog kiểm tra và xác nhận ESP32 đã khởi tạo thành công chân GPIO
+     */
+    private fun showEsp32ProvisionDialog(item: Item, gpioPin: Int) {
+        val dialog = Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_esp32_provision)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.90).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        dialog.setCancelable(false)
+
+        val pbLoading = dialog.findViewById<ProgressBar>(R.id.pbProvisionLoading)
+        val ivSuccess = dialog.findViewById<ImageView>(R.id.ivProvisionSuccess)
+        val ivWarning = dialog.findViewById<ImageView>(R.id.ivProvisionWarning)
+        val ivError = dialog.findViewById<ImageView>(R.id.ivProvisionError)
+        val tvTitle = dialog.findViewById<TextView>(R.id.tvProvisionTitle)
+        val tvMessage = dialog.findViewById<TextView>(R.id.tvProvisionMessage)
+        val btnAction = dialog.findViewById<MaterialButton>(R.id.btnProvisionAction)
+
+        tvMessage.text = "Đang gửi yêu cầu khởi tạo chân GPIO $gpioPin tới vi điều khiển ESP32..."
+        btnAction.text = "Đóng"
+        btnAction.setOnClickListener {
+            dialog.dismiss()
+            findNavController().popBackStack()
+        }
+
+        dialog.show()
+
+        // 1. Gửi lệnh provision sang MQTT
+        com.example.doan20.data.repository.ItemRepository.sendProvisionRequest(item, gpioPin)
+
+        // 2. Chờ ACK từ ESP32 qua flow
+        var isAckReceived = false
+        val ackJob = viewLifecycleOwner.lifecycleScope.launch {
+            com.example.doan20.data.repository.ItemRepository.provisionAck.collect { (id, payload) ->
+                if (id == item.id) {
+                    isAckReceived = true
+                    pbLoading.visibility = View.GONE
+
+                    var isSuccess = true
+                    var failMessage = ""
+                    try {
+                        val json = org.json.JSONObject(payload)
+                        val status = json.optString("status", "READY")
+                        val reason = json.optString("reason", "")
+                        val msg = json.optString("message", "")
+                        if (status.equals("FAILED", ignoreCase = true) || status.equals("FULL", ignoreCase = true)) {
+                            isSuccess = false
+                            failMessage = if (msg.isNotBlank()) msg else when (reason) {
+                                "GPIO_FULL" -> "ESP32 đã sử dụng hết các chân GPIO vật lý khả dụng!"
+                                "PIN_OCCUPIED" -> "Chân GPIO $gpioPin đã được vật dụng khác sử dụng trên ESP32!"
+                                "INVALID_PIN" -> "Chân GPIO $gpioPin không hợp lệ để làm cổng điều khiển!"
+                                else -> "Không thể khởi tạo chân GPIO $gpioPin trên ESP32."
+                            }
+                        }
+                    } catch (e: Exception) {
+                        if (payload.contains("FAILED") || payload.contains("FULL")) {
+                            isSuccess = false
+                            failMessage = "ESP32 không thể khởi tạo chân GPIO $gpioPin."
+                        }
+                    }
+
+                    if (isSuccess) {
+                        ivWarning.visibility = View.GONE
+                        ivError.visibility = View.GONE
+                        ivSuccess.visibility = View.VISIBLE
+                        tvTitle.text = "ESP32 đã sẵn sàng!"
+                        tvMessage.text = "Chân GPIO $gpioPin đã được vi điều khiển ESP32 khởi tạo thành công làm cổng điều khiển (Relay)!"
+                        btnAction.text = "Hoàn tất"
+
+                        // Tự động đóng sau 1.8 giây hoặc người dùng bấm Hoàn tất
+                        delay(1800)
+                        if (dialog.isShowing) {
+                            dialog.dismiss()
+                            findNavController().popBackStack()
+                        }
+                    } else {
+                        // Thất bại do hết chân GPIO hoặc chân đã bị chiếm
+                        ivSuccess.visibility = View.GONE
+                        ivWarning.visibility = View.GONE
+                        ivError.visibility = View.VISIBLE
+                        tvTitle.text = "Khởi tạo thất bại: Chân GPIO không khả dụng"
+                        tvMessage.text = "$failMessage\n\nVui lòng chọn một chân GPIO khác còn trống."
+                        btnAction.text = "Chọn chân khác"
+                        btnAction.setOnClickListener {
+                            dialog.dismiss()
+                            binding.etPinNumber.requestFocus()
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Timeout sau 4.5 giây nếu ESP32 đang tắt nguồn hoặc không có mạng
+        viewLifecycleOwner.lifecycleScope.launch {
+            delay(4500)
+            if (!isAckReceived && dialog.isShowing) {
+                ackJob.cancel()
+                pbLoading.visibility = View.GONE
+                ivSuccess.visibility = View.GONE
+                ivWarning.visibility = View.VISIBLE
+                tvTitle.text = "Chưa nhận phản hồi từ ESP32"
+                tvMessage.text = "Vật dụng đã được lưu vào hệ thống. Vi điều khiển ESP32 sẽ tự động nhận diện và cấu hình chân GPIO $gpioPin ngay khi online."
+                btnAction.text = "Tôi đã hiểu"
+            }
+        }
     }
 
     override fun onDestroyView() {

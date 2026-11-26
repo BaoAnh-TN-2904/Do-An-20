@@ -148,15 +148,26 @@ class AdminUserDetailBottomSheet : BottomSheetDialogFragment() {
                 switchPower.setOnCheckedChangeListener(null)
                 switchPower.isChecked = item.isOn
                 switchPower.setOnCheckedChangeListener { _, isChecked ->
-                    // 1. MQTT
-                    MqttManager.publish("doan20/$targetUserId/device/${item.id}/switch", if (isChecked) "1" else "0")
+                    // 1. MQTT with JSON containing GPIO
+                    val gpioPin = com.example.doan20.data.repository.ItemRepository.extractGpioPin(item.pinConfig)
+                    val payload = org.json.JSONObject().apply {
+                        put("id", item.id)
+                        put("state", if (isChecked) 1 else 0)
+                        if (gpioPin != null) put("gpio", gpioPin)
+                    }.toString()
+                    MqttManager.publish("doan20/$targetUserId/device/${item.id}/switch", payload)
                     // 2. Firestore
                     try {
                         FirebaseFirestore.getInstance().collection("users")
                             .document(targetUserId)
                             .collection("items")
                             .document(item.id)
-                            .update("isOn", isChecked)
+                            .update(
+                                mapOf(
+                                    "isOn" to isChecked,
+                                    "on" to isChecked
+                                )
+                            )
                     } catch (e: Exception) {
                         Log.e("AdminUserDetail", "Failed to update switch", e)
                     }

@@ -18,19 +18,22 @@
         android:paddingBottom="40dp">
 
         <!-- App Logo & Branding -->
-        <FrameLayout
-            android:layout_width="68dp"
-            android:layout_height="68dp"
-            android:background="@drawable/bg_logo_square">
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="84dp"
+            android:layout_height="84dp"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/border"
+            app:strokeWidth="1dp">
 
             <ImageView
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_home"
-                app:tint="@color/white"
-                android:contentDescription="@null" />
-        </FrameLayout>
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:src="@drawable/app_logo"
+                android:contentDescription="@string/app_name" />
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:layout_width="wrap_content"
@@ -106,7 +109,7 @@
                         android:id="@+id/etUsername"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Nhập tên đăng nhập (vd: admin)"
+                        android:hint="Nhập tên đăng nhập"
                         android:inputType="text"
                         android:textColor="@color/text_primary"
                         android:textSize="15sp" />
@@ -129,6 +132,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:endIconMode="password_toggle"
+                    app:endIconDrawable="@drawable/selector_password_visibility"
+                    app:endIconTint="@color/selector_password_icon_tint"
+                    app:endIconContentDescription="Hiện/Ẩn mật khẩu"
                     app:startIconDrawable="@drawable/ic_lock"
                     app:startIconTint="@color/primary_blue">
 
@@ -141,57 +147,6 @@
                         android:textColor="@color/text_primary"
                         android:textSize="15sp" />
                 </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Quick Fill Admin -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:text="Tài khoản Quản trị viên (Chạm để điền nhanh):"
-                    android:textColor="@color/text_muted"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <!-- Chip Admin -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardQuickAdmin"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:cardBackgroundColor="@color/primary_blue_container"
-                    app:cardCornerRadius="12dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="#BFDBFE"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="12dp"
-                        android:paddingVertical="8dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="⚡ Quản trị viên:"
-                            android:textColor="@color/primary_blue"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:layout_weight="1"
-                            android:text="admin · 123"
-                            android:textColor="@color/text_primary"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
 
                 <!-- Progress Bar -->
                 <ProgressBar
