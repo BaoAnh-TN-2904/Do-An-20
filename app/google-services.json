@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "572464609968",
-    "project_id": "doan20-348e1",
-    "storage_bucket": "doan20-348e1.firebasestorage.app"
+    "project_number": "57905440362",
+    "project_id": "ptud-291c1",
+    "storage_bucket": "ptud-291c1.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:572464609968:android:8c83d423a173043503d975",
+        "mobilesdk_app_id": "1:57905440362:android:c197ad65679c2dddbccc13",
         "android_client_info": {
-          "package_name": "com.example.doan20"
+          "package_name": "com.example.ptud_btn_ck"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBEOT1DM4H9DV5R5WW8H9NDYOiH38zTxlU"
+          "current_key": "AIzaSyDbWeYR9CG7b97Gnpy5aMXpHi_sAQpyYRc"
         }
       ],
       "services": {

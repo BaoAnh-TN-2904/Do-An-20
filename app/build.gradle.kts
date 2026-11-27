@@ -9,7 +9,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.doan20"
+        applicationId = "com.example.ptud_btn_ck"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -69,8 +69,12 @@ dependencies {
 
     // Firebase BoM & SDKs
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
+
+    // SVG rendering for Base64 SVG icons
+    implementation("com.caverock:androidsvg-aar:1.4")
 
     // HiveMQ MQTT Client
     implementation("com.hivemq:hivemq-mqtt-client:1.3.3")

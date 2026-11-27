@@ -1,114 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="76dp"
-    android:layout_marginVertical="5dp"
-    android:clickable="true"
-    android:focusable="true"
-    app:cardBackgroundColor="@color/surface"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="0dp"
-    app:strokeColor="@color/border"
-    app:strokeWidth="1dp">
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/bg_card_white"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="14dp">
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingHorizontal="14dp">
+    <!-- Avatar Initial Circle -->
+    <TextView
+        android:id="@+id/tvUserInitials"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_admin_avatar_circle"
+        android:gravity="center"
+        android:text="MA"
+        android:textColor="#2563EB"
+        android:textSize="16sp"
+        android:textStyle="bold" />
 
-        <!-- Avatar Circle -->
-        <FrameLayout
-            android:id="@+id/avatarBox"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:background="@drawable/bg_memory_room">
+    <!-- User Information -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tvUserInitials"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textColor="@color/primary_blue"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                tools:text="MA" />
-        </FrameLayout>
-
-        <!-- User Info -->
-        <LinearLayout
+        <TextView
+            android:id="@+id/tvUserName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_marginStart="14dp"
-            android:layout_toEndOf="@id/avatarBox"
-            android:layout_toStartOf="@+id/deviceCountBox"
-            android:orientation="vertical">
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Minh Anh"
+            android:textColor="#17243B"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tvAdminUserName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                tools:text="Minh Anh" />
-
-            <TextView
-                android:id="@+id/tvAdminUserCode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:textColor="@color/text_secondary"
-                android:textSize="11sp"
-                tools:text="ND-001" />
-        </LinearLayout>
-
-        <!-- Device Count & Arrow -->
-        <LinearLayout
-            android:id="@+id/deviceCountBox"
+        <TextView
+            android:id="@+id/tvUserEmail"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="email@example.com"
+            android:textColor="#64748B"
+            android:textSize="13sp" />
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="end"
-                android:orientation="vertical">
+    </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tvAdminDeviceCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/primary_blue"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    tools:text="25" />
+    <!-- Device count -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:orientation="vertical">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="thiết bị"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="10sp" />
-            </LinearLayout>
+        <TextView
+            android:id="@+id/tvDeviceCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="25"
+            android:textColor="#2563EB"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginStart="8dp"
-                android:src="@drawable/ic_chevron_right"
-                app:tint="@color/text_secondary"
-                android:contentDescription="@null" />
-        </LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="thiết bị"
+            android:textColor="#64748B"
+            android:textSize="12sp" />
 
-    </RelativeLayout>
-</com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+
+    <!-- Chevron Right Icon -->
+    <ImageView
+        android:id="@+id/ivChevron"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="10dp"
+        app:srcCompat="@drawable/ic_admin_chevron_right"
+        app:tint="#94A3B8" />
+
+</LinearLayout>

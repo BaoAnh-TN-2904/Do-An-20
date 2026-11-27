@@ -123,9 +123,9 @@ class AdminFragment : Fragment() {
         for (user in users) {
             val userView = layoutInflater.inflate(R.layout.item_admin_user, binding.layoutUserCards, false)
             val tvInitials = userView.findViewById<TextView>(R.id.tvUserInitials)
-            val tvName = userView.findViewById<TextView>(R.id.tvAdminUserName)
-            val tvCode = userView.findViewById<TextView>(R.id.tvAdminUserCode)
-            val tvDevices = userView.findViewById<TextView>(R.id.tvAdminDeviceCount)
+            val tvName = userView.findViewById<TextView>(R.id.tvUserName)
+            val tvCode = userView.findViewById<TextView>(R.id.tvUserEmail)
+            val tvDevices = userView.findViewById<TextView>(R.id.tvDeviceCount)
 
             tvInitials.text = user.initials
             tvName.text = user.name

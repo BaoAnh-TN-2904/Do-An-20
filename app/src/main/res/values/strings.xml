@@ -12,7 +12,7 @@
     <string name="greeting_title">Xin chào!</string>
     <string name="greeting_subtitle">Phòng gọn gàng, mọi thứ trong tầm tay.</string>
     <string name="stat_total">Tổng vật dụng</string>
-    <string name="stat_active">Còn dùng</string>
+    <string name="stat_active">Hoạt động</string>
     <string name="stat_broken">Hỏng</string>
     <string name="section_recent_items">Vật dụng gần đây</string>
     <string name="room_of_you">Phòng của bạn</string>
@@ -23,14 +23,14 @@
     <string name="items_screen_title">Vật dụng</string>
     <string name="search_hint">Tìm tên vật dụng...</string>
     <string name="filter_all">Tất cả</string>
-    <string name="filter_active">Còn dùng</string>
+    <string name="filter_active">Hoạt động</string>
     <string name="filter_broken">Hỏng</string>
     <string name="empty_items_title">Không tìm thấy vật dụng phù hợp</string>
     <string name="empty_items_subtitle">Hãy thử tìm với từ khóa khác hoặc xóa bộ lọc.</string>
     <string name="action_reset_filter">Đặt lại bộ lọc</string>
 
     <!-- Item Status & Categories -->
-    <string name="status_active_text">Còn dùng</string>
+    <string name="status_active_text">Hoạt động</string>
     <string name="status_broken_text">Hỏng</string>
     <string name="category_furniture">Nội thất</string>
     <string name="category_electronics">Điện tử</string>
