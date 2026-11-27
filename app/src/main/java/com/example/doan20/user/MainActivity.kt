@@ -18,7 +18,6 @@ import com.example.doan20.utils.MqttManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,6 +34,7 @@ class MainActivity : AppCompatActivity() {
     private var userListener: ListenerRegistration? = null
     private var devicesListener: ListenerRegistration? = null
     private var currentTabIndex = 0
+    private var activeMqttTargetId: String = ""
 
     private var homeFragment = HomeFragment()
     private var itemsFragment = ItemsFragment()
@@ -144,6 +144,7 @@ class MainActivity : AppCompatActivity() {
         userListener = db.collection("users").document(uid)
             .addSnapshotListener { doc, _ ->
                 if (doc != null && doc.exists()) {
+                    val esp32Id = MqttManager.normalizeEsp32Id(doc.getString("esp32Id"))
                     currentUser = UserModel(
                         uid = uid,
                         fullName = doc.getString("fullName")
@@ -153,6 +154,7 @@ class MainActivity : AppCompatActivity() {
                         role = doc.getString("role") ?: "user",
                         roomName = doc.getString("roomName")?.ifBlank { "Phòng cá nhân" } ?: "Phòng cá nhân",
                         userCode = doc.getString("userCode") ?: "",
+                        esp32Id = esp32Id,
                         createdAt = doc.get("createdAt")
                     )
                 } else {
@@ -162,6 +164,7 @@ class MainActivity : AppCompatActivity() {
                         email = email
                     )
                 }
+                updateMqttSubscription(uid, MqttManager.resolveTargetId(currentUser?.esp32Id, uid))
                 notifyAllTabsUpdated()
             }
 
@@ -181,41 +184,30 @@ class MainActivity : AppCompatActivity() {
             }
 
         // Kết nối MQTT cho điều khiển ESP32
-        MqttManager.connect(clientIdPrefix = uid) {
-            MqttManager.subscribe("doan20/$uid/device/+/state") { topic, payload ->
-                val parts = topic.split("/")
-                if (parts.size >= 5) {
-                    val deviceId = parts[3]
-                    val isOn = parseMqttSwitchState(payload)
-                    runOnUiThread {
-                        val target = deviceList.find { it.id == deviceId }
-                        if (target != null && target.isOn != isOn) {
-                            target.isOn = isOn
-                            notifyAllTabsUpdated()
-                            db.collection("devices").document(deviceId).update("isOn", isOn)
-                        }
+        updateMqttSubscription(uid, MqttManager.resolveTargetId(currentUser?.esp32Id, uid))
+    }
+
+    private fun updateMqttSubscription(uid: String, targetId: String) {
+        if (targetId.isBlank() || targetId == activeMqttTargetId) return
+        if (activeMqttTargetId.isNotBlank()) {
+            MqttManager.unsubscribe(MqttManager.stateWildcardTopic(activeMqttTargetId))
+        }
+        activeMqttTargetId = targetId
+        MqttManager.connect(clientIdPrefix = uid)
+        MqttManager.subscribe(MqttManager.stateWildcardTopic(targetId)) { topic, payload ->
+            val parts = topic.split("/")
+            if (parts.size >= 5) {
+                val deviceId = parts[3]
+                val isOn = MqttManager.parseSwitchState(payload)
+                runOnUiThread {
+                    val target = deviceList.find { it.id == deviceId }
+                    if (target != null && target.isOn != isOn) {
+                        target.isOn = isOn
+                        notifyAllTabsUpdated()
+                        db.collection("devices").document(deviceId).update("isOn", isOn)
                     }
                 }
             }
-        }
-    }
-
-    private fun parseMqttSwitchState(payload: String): Boolean {
-        val trimmed = payload.trim()
-        return if (trimmed.startsWith("{")) {
-            try {
-                val obj = JSONObject(trimmed)
-                when (val st = obj.opt("state")) {
-                    is Number -> st.toInt() == 1
-                    is Boolean -> st
-                    is String -> st == "1" || st.equals("ON", ignoreCase = true)
-                    else -> false
-                }
-            } catch (_: Exception) {
-                trimmed.contains("\"state\":1") || trimmed.contains("\"state\": 1")
-            }
-        } else {
-            trimmed == "1" || trimmed.equals("ON", ignoreCase = true)
         }
     }
 
@@ -226,12 +218,9 @@ class MainActivity : AppCompatActivity() {
 
         db.collection("devices").document(device.id).update("isOn", isOn)
 
-        val payload = JSONObject().apply {
-            put("id", device.id)
-            put("state", if (isOn) 1 else 0)
-            if (device.gpioPin > 0) put("gpio", device.gpioPin.toInt())
-        }.toString()
-        MqttManager.publish("doan20/$uid/device/${device.id}/switch", payload)
+        val targetId = MqttManager.resolveTargetId(currentUser?.esp32Id, uid)
+        val payload = MqttManager.buildSwitchPayload(device.id, isOn, device.gpioPin.toInt())
+        MqttManager.publish(MqttManager.switchTopic(targetId, device.id), payload)
     }
 
     fun toggleDeviceStatus(device: DeviceModel) {

@@ -21,6 +21,9 @@ public:
     // Tìm hoặc tự động khởi tạo chân GPIO cho thiết bị mới (trả về lý do lỗi nếu thất bại)
     Device* provisionDevice(const String& id, int gpio, int buttonPin = -1, String* outReason = nullptr);
 
+    // Xóa thiết bị và giải phóng chân GPIO
+    bool removeDevice(const String& id);
+
     // Kiểm tra xem chân GPIO đã bị thiết bị khác chiếm dụng chưa
     bool isPinOccupied(int gpio, const String& excludeId) const;
 
@@ -38,10 +41,10 @@ public:
     // Vòng lặp giám sát nút bấm của tất cả thiết bị
     void loop();
 
-    // Lưu thiết bị vào bộ nhớ Flash NVS
-    void saveDevice(const Device& dev);
+    // Lưu toàn bộ danh sách thiết bị vào bộ nhớ Flash NVS
+    void saveAllDevices();
 
-    // Tự động ghép cặp chân nút bấm theo chân Relay
+    // Tự động ghép cặp chân nút bấm theo chân Relay (-1 nếu không có nút riêng)
     static int getAutoButtonPin(int relayGpio);
 
 private:

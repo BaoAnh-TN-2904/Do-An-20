@@ -64,7 +64,8 @@ class ProfileFragment : Fragment(), MainActivity.DataRefreshable {
         if (user != null) {
             binding.tvProfileName.text = user.fullName
             val roomInfo = if (user.roomName.isNotBlank()) " · ${user.roomName}" else ""
-            binding.tvProfileEmail.text = "${user.email}$roomInfo"
+            val espInfo = if (user.esp32Id.isNotBlank()) "\nESP32: ${user.esp32Id}" else "\nChưa liên kết mã ESP32"
+            binding.tvProfileEmail.text = "${user.email}$roomInfo$espInfo"
             binding.tvAvatarInitials.text = user.getInitials()
             binding.btnAdminDashboard.visibility = if (user.isAdmin()) View.VISIBLE else View.GONE
         }

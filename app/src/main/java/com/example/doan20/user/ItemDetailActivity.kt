@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.doan20.R
 import com.example.doan20.databinding.ActivityItemDetailBinding
 import com.example.doan20.model.DeviceModel
+import com.example.doan20.utils.MqttManager
 import com.example.doan20.utils.UiHelper
 import com.example.doan20.utils.applyDeviceStatusBadge
 import com.google.android.material.button.MaterialButton
@@ -29,6 +30,7 @@ class ItemDetailActivity : AppCompatActivity() {
 
     private var deviceId: String = ""
     private var userId: String = ""
+    private var esp32Id: String = ""
     private var isAdmin: Boolean = false
     private var ownerName: String = ""
     private var ownerEmail: String = ""
@@ -45,7 +47,15 @@ class ItemDetailActivity : AppCompatActivity() {
 
         deviceId = intent.getStringExtra("DEVICE_ID").orEmpty()
         userId = intent.getStringExtra("USER_ID").orEmpty()
+        esp32Id = MqttManager.normalizeEsp32Id(intent.getStringExtra("ESP32_ID"))
         isAdmin = intent.getBooleanExtra("IS_ADMIN", false)
+
+        if (esp32Id.isBlank() && userId.isNotBlank()) {
+            db.collection("users").document(userId).get()
+                .addOnSuccessListener { doc ->
+                    esp32Id = MqttManager.normalizeEsp32Id(doc.getString("esp32Id"))
+                }
+        }
         ownerName = intent.getStringExtra("OWNER_NAME").orEmpty()
         ownerEmail = intent.getStringExtra("OWNER_EMAIL").orEmpty()
 
@@ -80,6 +90,7 @@ class ItemDetailActivity : AppCompatActivity() {
             val intent = Intent(this, AddItemActivity::class.java).apply {
                 putExtra("DEVICE_ID", deviceId)
                 putExtra("USER_ID", currentDevice?.userId?.ifBlank { userId } ?: userId)
+                putExtra("ESP32_ID", esp32Id)
             }
             startActivity(intent)
         }
@@ -151,6 +162,14 @@ class ItemDetailActivity : AppCompatActivity() {
             dialog.dismiss()
             deviceListener?.remove()
             deviceListener = null
+            val ownerId = device.userId.ifBlank { userId }
+            val mqttTargetId = MqttManager.resolveTargetId(esp32Id, ownerId)
+            if (device.isElectronic() && device.gpioPin > 0L && mqttTargetId.isNotBlank()) {
+                MqttManager.publish(
+                    MqttManager.removeTopic(mqttTargetId, device.id),
+                    MqttManager.buildRemovePayload(device.id, device.gpioPin.toInt())
+                )
+            }
             db.collection("devices").document(device.id).delete()
             Toast.makeText(this, R.string.msg_item_deleted, Toast.LENGTH_SHORT).show()
             finish()

@@ -10,8 +10,9 @@ class Device {
 public:
     Device(const String& id, int relayPin, int buttonPin = -1, bool activeLow = true);
 
-    // Khởi tạo phần cứng (pinMode, trạng thái xuất ban đầu)
+    // Khởi tạo / giải phóng phần cứng
     void initHardware();
+    void releaseHardware();
 
     // Điều khiển trạng thái
     void setState(bool newState);
@@ -20,6 +21,7 @@ public:
 
     // Quản lý chân GPIO
     void setRelayPin(int pin);
+    void setButtonPin(int buttonPin);
     int getRelayPin() const { return m_relayPin; }
     int getButtonPin() const { return m_buttonPin; }
     String getId() const { return m_id; }

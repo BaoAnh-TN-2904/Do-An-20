@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import com.example.doan20.databinding.BottomSheetEditProfileBinding
+import com.example.doan20.utils.MqttManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
@@ -36,6 +37,7 @@ class EditProfileBottomSheet : BottomSheetDialogFragment() {
         binding.etEditUsername.setText(user?.email.orEmpty())
         binding.etEditName.setText(user?.fullName.orEmpty())
         binding.etEditRoom.setText(user?.roomName.orEmpty())
+        binding.etEditEsp32Id.setText(user?.esp32Id.orEmpty())
 
         binding.etEditName.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -47,14 +49,29 @@ class EditProfileBottomSheet : BottomSheetDialogFragment() {
             override fun afterTextChanged(s: Editable?) {}
         })
 
+        binding.etEditEsp32Id.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                binding.tilEditEsp32Id.error = null
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
         binding.btnCloseEditProfile.setOnClickListener { dismiss() }
 
         binding.btnSaveProfile.setOnClickListener {
             val name = binding.etEditName.text?.toString().orEmpty().trim()
             val room = binding.etEditRoom.text?.toString().orEmpty().trim().ifBlank { "Phòng cá nhân" }
+            val rawEsp32 = binding.etEditEsp32Id.text?.toString().orEmpty()
+            val esp32Id = MqttManager.normalizeEsp32Id(rawEsp32)
 
             if (name.isBlank()) {
                 binding.tilEditName.error = "Vui lòng nhập họ và tên!"
+                return@setOnClickListener
+            }
+
+            if (rawEsp32.isNotBlank() && !MqttManager.isValidEsp32Code(esp32Id)) {
+                binding.tilEditEsp32Id.error = "Nhập đúng 6 ký tự cuối MAC (vd: E2F398)"
                 return@setOnClickListener
             }
 
@@ -77,6 +94,7 @@ class EditProfileBottomSheet : BottomSheetDialogFragment() {
                 "fullName" to name,
                 "name" to name,
                 "roomName" to room,
+                "esp32Id" to esp32Id,
                 "email" to (user?.email ?: FirebaseAuth.getInstance().currentUser?.email.orEmpty())
             )
 

@@ -6,20 +6,22 @@
 
 namespace Config {
     // 1. Cấu hình WiFi
-    constexpr const char* WIFI_SSID       = "TEN_WIFI_CUA_BAN";
-    constexpr const char* WIFI_PASSWORD   = "MAT_KHAU_WIFI";
+    constexpr const char* WIFI_SSID       = "ESP32_NCKH";
+    constexpr const char* WIFI_PASSWORD   = "giaky123";
 
     // 2. Cấu hình MQTT Broker
     constexpr const char* MQTT_BROKER     = "broker.hivemq.com";
     constexpr int         MQTT_PORT       = 1883;
 
-    // 3. Username tài khoản người dùng trên App
-    constexpr const char* APP_USERNAME    = "sample_user";
+    // 3. Topic Prefix mặc định (ESP32 tự lấy 6 ký tự cuối MAC làm định danh)
+    //    Ví dụ: MAC D4:E9:F4:E2:F3:98 -> Mã: E2F398 -> Topic: doan20/E2F398/device/...
+    //    Không cần sửa code khi đổi tài khoản App!
+    constexpr const char* TOPIC_ROOT      = "doan20";
 
-    // 4. Cấu hình Relay
-    // true: Module Relay kích mức LOW (Active-LOW, phổ biến nhất)
+    // 4. Cấu hình Relay / LED
+    // true: Module Relay kích mức LOW (Active-LOW)
     // false: Module Relay kích mức HIGH (Active-HIGH, hoặc nối trực tiếp LED)
-    constexpr bool RELAY_ACTIVE_LOW       = true;
+    constexpr bool RELAY_ACTIVE_LOW       = false;
 
     // 5. Cấu hình thời gian
     constexpr unsigned long MQTT_RETRY_INTERVAL = 5000; // ms

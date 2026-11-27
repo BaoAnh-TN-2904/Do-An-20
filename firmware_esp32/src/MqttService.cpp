@@ -5,12 +5,33 @@ MqttService::MqttService()
     : m_mqttClient(m_espClient),
       m_broker(nullptr),
       m_port(1883),
+      m_topicRoot("doan20"),
       m_lastRetryTime(0) {}
 
-void MqttService::setup(const char* broker, int port, const char* username) {
+void MqttService::ensureDeviceCode() {
+    if (m_deviceCode.length() > 0) return;
+    String mac = WiFi.macAddress();
+    mac.replace(":", "");
+    mac.toUpperCase();
+    if (mac.length() >= 6 && mac != "000000000000") {
+        m_deviceCode = mac.substring(mac.length() - 6);
+    } else {
+        uint64_t efuse = ESP.getEfuseMac();
+        char buf[7];
+        snprintf(buf, sizeof(buf), "%02X%02X%02X",
+                 (uint8_t)(efuse >> 24),
+                 (uint8_t)(efuse >> 32),
+                 (uint8_t)(efuse >> 40));
+        m_deviceCode = String(buf);
+    }
+}
+
+void MqttService::setup(const char* broker, int port, const char* topicRoot) {
     m_broker = broker;
     m_port = port;
-    m_username = String(username);
+    m_topicRoot = (topicRoot != nullptr && strlen(topicRoot) > 0) ? String(topicRoot) : String("doan20");
+
+    ensureDeviceCode();
 
     m_mqttClient.setServer(m_broker, m_port);
     m_mqttClient.setBufferSize(512);
@@ -33,19 +54,34 @@ void MqttService::connectNonBlocking() {
     if (now - m_lastRetryTime < 5000) return;
     m_lastRetryTime = now;
 
-    String clientId = "ESP32_DoAn20_" + String((uint32_t)ESP.getEfuseMac(), HEX);
+    ensureDeviceCode();
+    String clientId = "ESP32_DoAn20_" + m_deviceCode;
     Serial.printf("[MqttService] Đang kết nối %s:%d ... ", m_broker, m_port);
 
     if (m_mqttClient.connect(clientId.c_str())) {
         Serial.println("Thành công!");
+        Serial.println("=======================================================");
+        Serial.printf("  MA ESP32 (6 KY TU CUOI MAC): %s\n", m_deviceCode.c_str());
+        Serial.printf("  WiFi IP: %s | Topic: %s/%s/device/...\n",
+                      WiFi.localIP().toString().c_str(),
+                      m_topicRoot.c_str(),
+                      m_deviceCode.c_str());
+        Serial.println("=======================================================");
 
-        String switchTopic = String("doan20/") + m_username + "/device/+/switch";
-        String provTopic   = String("doan20/") + m_username + "/device/+/provision";
+        String switchTopic = m_topicRoot + "/" + m_deviceCode + "/device/+/switch";
+        String provTopic   = m_topicRoot + "/" + m_deviceCode + "/device/+/provision";
+        String removeTopic = m_topicRoot + "/" + m_deviceCode + "/device/+/remove";
 
         m_mqttClient.subscribe(switchTopic.c_str(), 1);
         m_mqttClient.subscribe(provTopic.c_str(), 1);
+        m_mqttClient.subscribe(removeTopic.c_str(), 1);
 
-        Serial.printf("[MqttService] Đã Subscribe:\n  -> %s\n  -> %s\n", switchTopic.c_str(), provTopic.c_str());
+        Serial.printf("[MqttService] Đã Subscribe:\n  -> %s\n  -> %s\n  -> %s\n",
+                      switchTopic.c_str(), provTopic.c_str(), removeTopic.c_str());
+
+        if (m_onConnected) {
+            m_onConnected();
+        }
     } else {
         Serial.printf("Thất bại (rc=%d), thử lại sau.\n", m_mqttClient.state());
     }
@@ -62,7 +98,7 @@ void MqttService::loop() {
 void MqttService::publishState(const Device& dev) {
     if (!m_mqttClient.connected()) return;
 
-    String topic = String("doan20/") + m_username + "/device/" + dev.getId() + "/state";
+    String topic = m_topicRoot + "/" + m_deviceCode + "/device/" + dev.getId() + "/state";
 
     JsonDocument doc;
     doc["id"] = dev.getId();
@@ -77,16 +113,23 @@ void MqttService::publishState(const Device& dev) {
     Serial.printf("[MqttService] Publish State: %s -> %s\n", topic.c_str(), buffer);
 }
 
-void MqttService::publishAck(const String& id, int gpio, const char* status, const char* reason, const char* message) {
+void MqttService::clearRetainedState(const String& id) {
+    if (!m_mqttClient.connected()) return;
+    String topic = m_topicRoot + "/" + m_deviceCode + "/device/" + id + "/state";
+    m_mqttClient.publish(topic.c_str(), "", true);
+    Serial.printf("[MqttService] Clear Retained State: %s\n", topic.c_str());
+}
+
+void MqttService::publishAck(const String& id, int gpio, const char* status, const char* reason, const char* message, int state) {
     if (!m_mqttClient.connected()) return;
 
-    String topic = String("doan20/") + m_username + "/device/" + id + "/ack";
+    String topic = m_topicRoot + "/" + m_deviceCode + "/device/" + id + "/ack";
 
     JsonDocument doc;
     doc["id"] = id;
     doc["status"] = status;
     doc["gpio"] = gpio;
-    doc["state"] = 0;
+    doc["state"] = state;
     doc["reason"] = reason;
     doc["message"] = message;
 
@@ -98,7 +141,7 @@ void MqttService::publishAck(const String& id, int gpio, const char* status, con
 }
 
 void MqttService::handleMqttPayload(char* topic, byte* payload, unsigned int length) {
-    char payloadStr[256];
+    char payloadStr[512];
     if (length >= sizeof(payloadStr)) length = sizeof(payloadStr) - 1;
     memcpy(payloadStr, payload, length);
     payloadStr[length] = '\0';
@@ -127,6 +170,12 @@ void MqttService::handleMqttPayload(char* topic, byte* payload, unsigned int len
         if (!err) {
             if (doc["id"].is<const char*>()) {
                 cmd.deviceId = doc["id"].as<String>();
+            }
+            if (doc["action"].is<const char*>()) {
+                String jsonAction = doc["action"].as<String>();
+                if (jsonAction.equalsIgnoreCase("REMOVE")) {
+                    cmd.action = "remove";
+                }
             }
             int st = doc["state"] | 0;
             cmd.targetState = (st == 1);

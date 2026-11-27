@@ -30,6 +30,13 @@ void Device::initHardware() {
     }
 }
 
+void Device::releaseHardware() {
+    if (isValidOutputPin(m_relayPin)) {
+        digitalWrite(m_relayPin, m_activeLow ? HIGH : LOW);
+        pinMode(m_relayPin, INPUT);
+    }
+}
+
 void Device::applyRelayOutput() {
     if (!isValidOutputPin(m_relayPin)) return;
     if (m_activeLow) {
@@ -52,9 +59,21 @@ void Device::toggleState() {
 
 void Device::setRelayPin(int pin) {
     if (m_relayPin != pin && isValidOutputPin(pin)) {
+        releaseHardware();
         m_relayPin = pin;
         pinMode(m_relayPin, OUTPUT);
         applyRelayOutput();
+    }
+}
+
+void Device::setButtonPin(int buttonPin) {
+    if (m_buttonPin != buttonPin) {
+        m_buttonPin = buttonPin;
+        if (m_buttonPin >= 0) {
+            pinMode(m_buttonPin, INPUT_PULLUP);
+            m_lastReading = digitalRead(m_buttonPin);
+            m_stableState = m_lastReading;
+        }
     }
 }
 

@@ -25,18 +25,26 @@ void setup() {
     // 2. Kết nối WiFi
     networkManager.setup(Config::WIFI_SSID, Config::WIFI_PASSWORD);
 
-    // 3. Khởi tạo MQTT Service
-    mqttService.setup(Config::MQTT_BROKER, Config::MQTT_PORT, Config::APP_USERNAME);
+    // 3. Khởi tạo MQTT Service (tự động dùng mã MAC/Chip ID của ESP32)
+    mqttService.setup(Config::MQTT_BROKER, Config::MQTT_PORT, Config::TOPIC_ROOT);
 
-    // 4. Đăng ký sự kiện: Khi người dùng BẤM NÚT VẬT LÝ tại phòng
+    // 4. Đăng ký sự kiện: Khi MQTT kết nối lại -> gửi trạng thái hiện tại của toàn bộ thiết bị lên App
+    mqttService.setOnConnectedCallback([]() {
+        const auto& devices = deviceManager.getDevices();
+        for (const auto& dev : devices) {
+            mqttService.publishState(dev);
+        }
+    });
+
+    // 5. Đăng ký sự kiện: Khi người dùng BẤM NÚT VẬT LÝ tại phòng
     deviceManager.setOnButtonToggledCallback([](Device& dev) {
         Serial.printf("\n[SỰ KIỆN] Nút vật lý nhấn -> '%s' (GPIO %d) = %s\n",
                       dev.getId().c_str(), dev.getRelayPin(), dev.getState() ? "BẬT" : "TẮT");
-        deviceManager.saveDevice(dev);
+        deviceManager.saveAllDevices();
         mqttService.publishState(dev); // Gửi ngay lên App để gạt switch
     });
 
-    // 5. Đăng ký sự kiện: Khi NHẬN LỆNH TỪ APP ANDROID gửi xuống
+    // 6. Đăng ký sự kiện: Khi NHẬN LỆNH TỪ APP ANDROID gửi xuống
     mqttService.setCommandCallback([](const IncomingCommand& cmd) {
         if (cmd.action == "provision") {
             // Popup kiểm tra khởi tạo chân từ App
@@ -44,7 +52,15 @@ void setup() {
             String failReason = "";
             Device* dev = deviceManager.provisionDevice(cmd.deviceId, cmd.targetGpio, -1, &failReason);
             if (dev != nullptr) {
-                mqttService.publishAck(cmd.deviceId, dev->getRelayPin(), "READY", "OK", "Chân GPIO đã được khởi tạo thành công");
+                mqttService.publishAck(
+                    cmd.deviceId,
+                    dev->getRelayPin(),
+                    "READY",
+                    "OK",
+                    "Chân GPIO đã được khởi tạo thành công",
+                    dev->getState() ? 1 : 0
+                );
+                mqttService.publishState(*dev);
             } else {
                 const char* msg = "Không thể khởi tạo chân GPIO";
                 if (failReason == "GPIO_FULL") {
@@ -56,15 +72,23 @@ void setup() {
                 }
                 mqttService.publishAck(cmd.deviceId, cmd.targetGpio, "FAILED", failReason.c_str(), msg);
             }
+        } else if (cmd.action == "remove") {
+            Serial.printf("[LỆNH REMOVE] Xóa thiết bị '%s'\n", cmd.deviceId.c_str());
+            deviceManager.removeDevice(cmd.deviceId);
+            mqttService.clearRetainedState(cmd.deviceId);
+            mqttService.publishAck(cmd.deviceId, cmd.targetGpio, "REMOVED", "OK", "Đã xóa thiết bị và giải phóng chân GPIO");
         } else {
             // Lệnh Bật/Tắt bình thường (switch)
             Device* dev = deviceManager.provisionDevice(cmd.deviceId, cmd.targetGpio);
             if (dev != nullptr) {
                 dev->setState(cmd.targetState);
-                deviceManager.saveDevice(*dev);
+                deviceManager.saveAllDevices();
                 mqttService.publishState(*dev);
                 Serial.printf("[LỆNH SWITCH] '%s' trên GPIO %d -> %s\n",
                               dev->getId().c_str(), dev->getRelayPin(), dev->getState() ? "BẬT" : "TẮT");
+            } else {
+                Serial.printf("[LỆNH SWITCH] Bỏ qua '%s' (GPIO %d không hợp lệ hoặc bị chiếm)\n",
+                              cmd.deviceId.c_str(), cmd.targetGpio);
             }
         }
     });

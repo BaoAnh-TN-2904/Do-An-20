@@ -13,16 +13,38 @@ int DeviceManager::getAutoButtonPin(int relayGpio) {
         case 25: return 14;  // Thiết bị 6 -> Nút GPIO 14
         case 26: return 15;  // Thiết bị 7 -> Nút GPIO 15
         case 27: return 32;  // Thiết bị 8 -> Nút GPIO 32
-        default: return 0;   // Dùng nút BOOT (GPIO 0) có sẵn trên bo mạch
+        default: return -1;  // Không gán chung vào nút BOOT để tránh bật/tắt hàng loạt
     }
 }
 
 void DeviceManager::init() {
-    // Nạp 2 thiết bị cơ sở mặc định theo dữ liệu mẫu của App
-    provisionDevice("item_lamp_01", 18, 4);
-    provisionDevice("item_fan_01", 23, 5);
+    m_devices.clear();
+    m_prefs.begin("devices", true);
+    int count = m_prefs.getInt("count", 0);
+    if (count < 0) count = 0;
+    if (count > (int)MAX_DEVICES) count = (int)MAX_DEVICES;
 
-    Serial.printf("[DeviceManager] Đã khởi tạo %d thiết bị cơ sở.\n", (int)m_devices.size());
+    for (int i = 0; i < count; i++) {
+        String idKey = "id_" + String(i);
+        String pnKey = "pn_" + String(i);
+        String btKey = "bt_" + String(i);
+        String stKey = "st_" + String(i);
+
+        String id = m_prefs.getString(idKey.c_str(), "");
+        int pin = m_prefs.getInt(pnKey.c_str(), -1);
+        int btn = m_prefs.getInt(btKey.c_str(), -1);
+        bool st = m_prefs.getBool(stKey.c_str(), false);
+
+        if (id.length() > 0 && Device::isValidOutputPin(pin) && !isPinOccupied(pin, id)) {
+            m_devices.emplace_back(id, pin, btn, Config::RELAY_ACTIVE_LOW);
+            Device& dev = m_devices.back();
+            dev.initHardware();
+            dev.setState(st);
+        }
+    }
+    m_prefs.end();
+
+    Serial.printf("[DeviceManager] Đã khôi phục %d thiết bị từ bộ nhớ Flash NVS.\n", (int)m_devices.size());
 }
 
 Device* DeviceManager::getDevice(const String& id) {
@@ -58,7 +80,9 @@ Device* DeviceManager::provisionDevice(const String& id, int gpio, int buttonPin
             if (existing->getRelayPin() != gpio) {
                 Serial.printf("[DeviceManager] Cập nhật chân cho '%s': GPIO %d -> GPIO %d\n", id.c_str(), existing->getRelayPin(), gpio);
                 existing->setRelayPin(gpio);
-                saveDevice(*existing);
+                int assignedBtn = (buttonPin >= 0) ? buttonPin : getAutoButtonPin(gpio);
+                existing->setButtonPin(assignedBtn);
+                saveAllDevices();
             }
         }
         if (outReason) *outReason = "OK";
@@ -93,19 +117,42 @@ Device* DeviceManager::provisionDevice(const String& id, int gpio, int buttonPin
     m_devices.emplace_back(id, gpio, assignedBtn, Config::RELAY_ACTIVE_LOW);
     Device* newDev = &m_devices.back();
     newDev->initHardware();
-    saveDevice(*newDev);
+    saveAllDevices();
 
     if (outReason) *outReason = "OK";
     return newDev;
 }
 
-void DeviceManager::saveDevice(const Device& dev) {
+bool DeviceManager::removeDevice(const String& id) {
+    for (size_t i = 0; i < m_devices.size(); i++) {
+        if (m_devices[i].getId() == id) {
+            Serial.printf("[DeviceManager] Xóa thiết bị '%s' (giải phóng GPIO %d)\n", id.c_str(), m_devices[i].getRelayPin());
+            m_devices[i].releaseHardware();
+            m_devices.erase(m_devices.begin() + i);
+            saveAllDevices();
+            return true;
+        }
+    }
+    return false;
+}
+
+void DeviceManager::saveAllDevices() {
     m_prefs.begin("devices", false);
-    m_prefs.putInt(dev.getId().c_str(), dev.getRelayPin());
-    String stateKey = dev.getId() + "_st";
-    m_prefs.putBool(stateKey.c_str(), dev.getState());
+    m_prefs.clear();
+    int count = (int)m_devices.size();
+    m_prefs.putInt("count", count);
+    for (int i = 0; i < count; i++) {
+        String idKey = "id_" + String(i);
+        String pnKey = "pn_" + String(i);
+        String btKey = "bt_" + String(i);
+        String stKey = "st_" + String(i);
+        m_prefs.putString(idKey.c_str(), m_devices[i].getId());
+        m_prefs.putInt(pnKey.c_str(), m_devices[i].getRelayPin());
+        m_prefs.putInt(btKey.c_str(), m_devices[i].getButtonPin());
+        m_prefs.putBool(stKey.c_str(), m_devices[i].getState());
+    }
     m_prefs.end();
-    Serial.printf("[DeviceManager] Đã lưu '%s' vào bộ nhớ Flash NVS.\n", dev.getId().c_str());
+    Serial.printf("[DeviceManager] Đã đồng bộ %d thiết bị vào bộ nhớ Flash NVS.\n", count);
 }
 
 void DeviceManager::loop() {

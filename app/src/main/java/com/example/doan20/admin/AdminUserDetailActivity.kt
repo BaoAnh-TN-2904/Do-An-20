@@ -13,9 +13,9 @@ import com.example.doan20.user.AddItemActivity
 import com.example.doan20.user.ItemDetailActivity
 import com.example.doan20.utils.MqttManager
 import com.example.doan20.utils.UiHelper
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import org.json.JSONObject
 
 class AdminUserDetailActivity : AppCompatActivity() {
 
@@ -26,9 +26,12 @@ class AdminUserDetailActivity : AppCompatActivity() {
     private var currentUserId: String = ""
     private var currentUserName: String = ""
     private var currentUserEmail: String = ""
+    private var currentUserEsp32Id: String = ""
+    private var activeMqttTargetId: String = ""
 
     private val userDevices = mutableListOf<DeviceModel>()
     private var devicesListener: ListenerRegistration? = null
+    private var userDocListener: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,10 +45,50 @@ class AdminUserDetailActivity : AppCompatActivity() {
         currentUserId = intent.getStringExtra("USER_ID").orEmpty()
         currentUserName = intent.getStringExtra("USER_NAME").orEmpty().ifBlank { "Người dùng" }
         currentUserEmail = intent.getStringExtra("USER_EMAIL").orEmpty()
+        currentUserEsp32Id = MqttManager.normalizeEsp32Id(intent.getStringExtra("ESP32_ID"))
 
         setupUI()
         setupRecyclerView()
         loadUserDevices()
+        setupMqttSync()
+    }
+
+    private fun setupMqttSync() {
+        if (currentUserId.isBlank()) return
+        subscribeToTarget(MqttManager.resolveTargetId(currentUserEsp32Id, currentUserId))
+
+        userDocListener = db.collection("users").document(currentUserId)
+            .addSnapshotListener { doc, _ ->
+                if (doc != null && doc.exists()) {
+                    currentUserEsp32Id = MqttManager.normalizeEsp32Id(doc.getString("esp32Id"))
+                    subscribeToTarget(MqttManager.resolveTargetId(currentUserEsp32Id, currentUserId))
+                }
+            }
+    }
+
+    private fun subscribeToTarget(targetId: String) {
+        if (targetId.isBlank() || targetId == activeMqttTargetId) return
+        if (activeMqttTargetId.isNotBlank()) {
+            MqttManager.unsubscribe(MqttManager.stateWildcardTopic(activeMqttTargetId))
+        }
+        activeMqttTargetId = targetId
+        val adminPrefix = FirebaseAuth.getInstance().currentUser?.uid ?: "admin"
+        MqttManager.connect(clientIdPrefix = adminPrefix)
+        MqttManager.subscribe(MqttManager.stateWildcardTopic(targetId)) { topic, payload ->
+            val parts = topic.split("/")
+            if (parts.size >= 5) {
+                val deviceId = parts[3]
+                val isOn = MqttManager.parseSwitchState(payload)
+                runOnUiThread {
+                    val target = userDevices.find { it.id == deviceId }
+                    if (target != null && target.isOn != isOn) {
+                        target.isOn = isOn
+                        deviceAdapter.updateData(userDevices)
+                        db.collection("devices").document(deviceId).update("isOn", isOn)
+                    }
+                }
+            }
+        }
     }
 
     private fun setupUI() {
@@ -56,6 +99,7 @@ class AdminUserDetailActivity : AppCompatActivity() {
         binding.btnAddDevice.setOnClickListener {
             val intent = Intent(this, AddItemActivity::class.java).apply {
                 putExtra("USER_ID", currentUserId)
+                putExtra("ESP32_ID", currentUserEsp32Id)
             }
             startActivity(intent)
         }
@@ -73,6 +117,7 @@ class AdminUserDetailActivity : AppCompatActivity() {
                 val intent = Intent(this, ItemDetailActivity::class.java).apply {
                     putExtra("DEVICE_ID", device.id)
                     putExtra("USER_ID", currentUserId)
+                    putExtra("ESP32_ID", currentUserEsp32Id)
                     putExtra("IS_ADMIN", true)
                     putExtra("OWNER_NAME", currentUserName)
                     putExtra("OWNER_EMAIL", currentUserEmail)
@@ -91,14 +136,16 @@ class AdminUserDetailActivity : AppCompatActivity() {
                             Toast.makeText(this, "Lỗi cập nhật: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
 
-                    if (device.gpioPin > 0) {
-                        val payload = JSONObject().apply {
-                            put("id", device.id)
-                            put("state", if (isChecked) 1 else 0)
-                            put("gpio", device.gpioPin.toInt())
-                        }.toString()
-                        MqttManager.publish("doan20/$currentUserId/device/${device.id}/switch", payload)
-                    }
+                    val payload = MqttManager.buildSwitchPayload(
+                        device.id,
+                        isChecked,
+                        device.gpioPin.toInt()
+                    )
+                    val mqttTargetId = MqttManager.resolveTargetId(currentUserEsp32Id, currentUserId)
+                    MqttManager.publish(
+                        MqttManager.switchTopic(mqttTargetId, device.id),
+                        payload
+                    )
                 }
             }
         )
@@ -171,5 +218,9 @@ class AdminUserDetailActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         devicesListener?.remove()
+        userDocListener?.remove()
+        if (activeMqttTargetId.isNotBlank()) {
+            MqttManager.unsubscribe(MqttManager.stateWildcardTopic(activeMqttTargetId))
+        }
     }
 }

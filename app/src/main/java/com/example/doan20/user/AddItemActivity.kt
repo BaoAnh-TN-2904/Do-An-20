@@ -2,19 +2,28 @@ package com.example.doan20.user
 
 import android.Manifest
 import android.app.DatePickerDialog
+import android.app.Dialog
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.drawable.ColorDrawable
 import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Base64
 import android.view.View
+import android.view.ViewGroup
+import android.view.Window
 import android.widget.ArrayAdapter
 import android.widget.ImageView
+import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,10 +33,13 @@ import androidx.core.content.FileProvider
 import com.example.doan20.R
 import com.example.doan20.databinding.ActivityAddItemBinding
 import com.example.doan20.model.DeviceModel
+import com.example.doan20.utils.MqttManager
 import com.example.doan20.utils.UiHelper
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.Calendar
@@ -43,11 +55,14 @@ class AddItemActivity : AppCompatActivity() {
 
     private var editingDeviceId: String? = null
     private var targetUserId: String = ""
+    private var targetEsp32Id: String = ""
     private var editingDevice: DeviceModel? = null
 
     private var selectedImageBase64: String = ""
     private var pendingCameraUri: Uri? = null
     private var isFormattingPrice = false
+    private var activeAckTopic: String? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val cameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -86,6 +101,14 @@ class AddItemActivity : AppCompatActivity() {
         editingDeviceId = intent.getStringExtra("DEVICE_ID")?.takeIf { it.isNotBlank() }
         targetUserId = intent.getStringExtra("USER_ID").orEmpty()
             .ifBlank { FirebaseAuth.getInstance().currentUser?.uid.orEmpty() }
+        targetEsp32Id = MqttManager.normalizeEsp32Id(intent.getStringExtra("ESP32_ID"))
+
+        if (targetEsp32Id.isBlank() && targetUserId.isNotBlank()) {
+            db.collection("users").document(targetUserId).get()
+                .addOnSuccessListener { doc ->
+                    targetEsp32Id = MqttManager.normalizeEsp32Id(doc.getString("esp32Id"))
+                }
+        }
 
         savedInstanceState?.getString("pendingCameraUri")?.let {
             pendingCameraUri = Uri.parse(it)
@@ -413,23 +436,165 @@ class AddItemActivity : AppCompatActivity() {
             purchasePrice = priceStr,
             status = status,
             createdAt = existing?.createdAt?.ifBlank { System.currentTimeMillis().toString() }
-                ?: System.currentTimeMillis().toString()
+                ?: System.currentTimeMillis().toString(),
+            isOn = existing?.isOn ?: false
         )
 
         binding.btnSaveItem.isEnabled = false
         db.collection("devices").document(docId)
             .set(device.toFirestoreMap())
             .addOnSuccessListener {
+                val mqttTargetId = MqttManager.resolveTargetId(targetEsp32Id, ownerId)
+                // Nếu trước đó có gán GPIO nhưng nay bỏ GPIO hoặc đổi sang loại không phải Điện tử -> giải phóng chân trên ESP32
+                if (existing != null && existing.gpioPin > 0L && (!device.isElectronic() || gpioPin <= 0L) && mqttTargetId.isNotBlank()) {
+                    MqttManager.publish(
+                        MqttManager.removeTopic(mqttTargetId, docId),
+                        MqttManager.buildRemovePayload(docId, existing.gpioPin.toInt())
+                    )
+                }
+
                 Toast.makeText(
                     this,
                     if (existing != null) R.string.msg_item_updated else R.string.msg_item_saved,
                     Toast.LENGTH_SHORT
                 ).show()
-                finish()
+
+                if (device.isElectronic() && gpioPin > 0L && mqttTargetId.isNotBlank()) {
+                    showEsp32ProvisionDialog(mqttTargetId, docId, name, gpioPin.toInt())
+                } else {
+                    finish()
+                }
             }
             .addOnFailureListener { e ->
                 binding.btnSaveItem.isEnabled = true
                 Toast.makeText(this, "Lỗi lưu thiết bị: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    private fun showEsp32ProvisionDialog(ownerId: String, deviceId: String, deviceName: String, gpioPin: Int) {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_esp32_provision)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.90).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+        dialog.setCancelable(false)
+
+        val pbLoading = dialog.findViewById<ProgressBar>(R.id.pbProvisionLoading)
+        val ivSuccess = dialog.findViewById<ImageView>(R.id.ivProvisionSuccess)
+        val ivWarning = dialog.findViewById<ImageView>(R.id.ivProvisionWarning)
+        val ivError = dialog.findViewById<ImageView>(R.id.ivProvisionError)
+        val tvTitle = dialog.findViewById<TextView>(R.id.tvProvisionTitle)
+        val tvMessage = dialog.findViewById<TextView>(R.id.tvProvisionMessage)
+        val btnAction = dialog.findViewById<MaterialButton>(R.id.btnProvisionAction)
+
+        tvMessage.text = "Đang gửi yêu cầu khởi tạo chân GPIO $gpioPin tới vi điều khiển ESP32..."
+        btnAction.text = "Đóng"
+
+        val ackTopic = MqttManager.ackTopic(ownerId, deviceId)
+        activeAckTopic = ackTopic
+        var isAckReceived = false
+
+        val cleanupAck = {
+            mainHandler.removeCallbacksAndMessages(null)
+            MqttManager.unsubscribe(ackTopic)
+            if (activeAckTopic == ackTopic) activeAckTopic = null
+        }
+
+        btnAction.setOnClickListener {
+            cleanupAck()
+            dialog.dismiss()
+            finish()
+        }
+
+        dialog.show()
+
+        MqttManager.subscribe(
+            topic = ackTopic,
+            onSubscribed = {
+                MqttManager.publish(
+                    MqttManager.provisionTopic(ownerId, deviceId),
+                    MqttManager.buildProvisionPayload(deviceId, deviceName, gpioPin)
+                )
+            }
+        ) { _, payload ->
+            runOnUiThread {
+                if (isFinishing || isDestroyed || !dialog.isShowing || isAckReceived) return@runOnUiThread
+                isAckReceived = true
+                cleanupAck()
+                pbLoading.visibility = View.GONE
+
+                var isSuccess = true
+                var failMessage = ""
+                try {
+                    val json = JSONObject(payload)
+                    val status = json.optString("status", "READY")
+                    val reason = json.optString("reason", "")
+                    val msg = json.optString("message", "")
+                    if (status.equals("FAILED", ignoreCase = true) || status.equals("FULL", ignoreCase = true)) {
+                        isSuccess = false
+                        failMessage = if (msg.isNotBlank()) msg else when (reason) {
+                            "GPIO_FULL" -> "ESP32 đã sử dụng hết các chân GPIO vật lý khả dụng!"
+                            "PIN_OCCUPIED" -> "Chân GPIO $gpioPin đã được vật dụng khác sử dụng trên ESP32!"
+                            "INVALID_PIN" -> "Chân GPIO $gpioPin không hợp lệ để làm cổng điều khiển!"
+                            else -> "Không thể khởi tạo chân GPIO $gpioPin trên ESP32."
+                        }
+                    }
+                } catch (_: Exception) {
+                    if (payload.contains("FAILED") || payload.contains("FULL")) {
+                        isSuccess = false
+                        failMessage = "ESP32 không thể khởi tạo chân GPIO $gpioPin."
+                    }
+                }
+
+                if (isSuccess) {
+                    ivWarning.visibility = View.GONE
+                    ivError.visibility = View.GONE
+                    ivSuccess.visibility = View.VISIBLE
+                    tvTitle.text = "ESP32 đã sẵn sàng!"
+                    tvMessage.text = "Chân GPIO $gpioPin đã được vi điều khiển ESP32 khởi tạo thành công làm cổng điều khiển (Relay)!"
+                    btnAction.text = "Hoàn tất"
+
+                    mainHandler.postDelayed({
+                        if (!isFinishing && !isDestroyed && dialog.isShowing) {
+                            dialog.dismiss()
+                            finish()
+                        }
+                    }, 1800)
+                } else {
+                    binding.btnSaveItem.isEnabled = true
+                    ivSuccess.visibility = View.GONE
+                    ivWarning.visibility = View.GONE
+                    ivError.visibility = View.VISIBLE
+                    tvTitle.text = "Khởi tạo thất bại: Chân GPIO không khả dụng"
+                    tvMessage.text = "$failMessage\n\nVui lòng chọn một chân GPIO khác còn trống."
+                    btnAction.text = "Chọn chân khác"
+                    btnAction.setOnClickListener {
+                        dialog.dismiss()
+                        binding.etPinNumber.requestFocus()
+                    }
+                }
+            }
+        }
+
+        mainHandler.postDelayed({
+            if (!isFinishing && !isDestroyed && !isAckReceived && dialog.isShowing) {
+                cleanupAck()
+                pbLoading.visibility = View.GONE
+                ivSuccess.visibility = View.GONE
+                ivWarning.visibility = View.VISIBLE
+                tvTitle.text = "Chưa nhận phản hồi từ ESP32"
+                tvMessage.text = "Vật dụng đã được lưu vào hệ thống. Vi điều khiển ESP32 sẽ tự động cấu hình chân GPIO $gpioPin khi kết nối."
+                btnAction.text = "Tôi đã hiểu"
+            }
+        }, 4500)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mainHandler.removeCallbacksAndMessages(null)
+        activeAckTopic?.let { MqttManager.unsubscribe(it) }
     }
 }

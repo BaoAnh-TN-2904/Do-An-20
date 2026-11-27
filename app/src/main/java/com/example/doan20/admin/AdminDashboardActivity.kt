@@ -56,6 +56,7 @@ class AdminDashboardActivity : AppCompatActivity() {
                 putExtra("USER_EMAIL", user.email)
                 putExtra("USER_ROLE", user.role)
                 putExtra("USER_CODE", user.userCode)
+                putExtra("ESP32_ID", user.esp32Id)
             }
             startActivity(intent)
         }
@@ -154,6 +155,7 @@ class AdminDashboardActivity : AppCompatActivity() {
                         val email = doc.getString("email") ?: ""
                         val uid = doc.getString("uid") ?: doc.id
                         val userCode = doc.getString("userCode") ?: "ND-%03d".format(userIndex++)
+                        val esp32Id = MqttManager.normalizeEsp32Id(doc.getString("esp32Id"))
 
                         allUsers.add(
                             UserModel(
@@ -162,6 +164,7 @@ class AdminDashboardActivity : AppCompatActivity() {
                                 email = email,
                                 role = role.ifBlank { "user" },
                                 userCode = userCode,
+                                esp32Id = esp32Id,
                                 deviceCount = 0,
                                 createdAt = doc.get("createdAt")
                             )

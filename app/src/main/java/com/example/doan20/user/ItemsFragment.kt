@@ -56,6 +56,7 @@ class ItemsFragment : Fragment(), MainActivity.DataRefreshable {
                 val intent = Intent(requireContext(), ItemDetailActivity::class.java).apply {
                     putExtra("DEVICE_ID", device.id)
                     putExtra("USER_ID", main.currentUser?.uid.orEmpty())
+                    putExtra("ESP32_ID", main.currentUser?.esp32Id.orEmpty())
                     putExtra("IS_ADMIN", false)
                 }
                 startActivity(intent)
@@ -103,6 +104,7 @@ class ItemsFragment : Fragment(), MainActivity.DataRefreshable {
             val main = activity as? MainActivity ?: return@setOnClickListener
             val intent = Intent(requireContext(), AddItemActivity::class.java).apply {
                 putExtra("USER_ID", main.currentUser?.uid.orEmpty())
+                putExtra("ESP32_ID", main.currentUser?.esp32Id.orEmpty())
             }
             startActivity(intent)
         }

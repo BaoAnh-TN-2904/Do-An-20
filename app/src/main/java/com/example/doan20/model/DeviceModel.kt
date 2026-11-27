@@ -60,7 +60,7 @@ data class DeviceModel(
     }
 
     /**
-     * Chuyển về đúng 12 trường lưu lên collection "devices" của Firestore
+     * Chuyển về các trường lưu lên collection "devices" của Firestore (giữ nguyên trạng thái isOn)
      */
     fun toFirestoreMap(): HashMap<String, Any> {
         return hashMapOf(
@@ -70,6 +70,7 @@ data class DeviceModel(
             "devicedId" to devicedId.ifBlank { id },
             "gpioPin" to gpioPin,
             "imageBase64" to imageBase64,
+            "isOn" to isOn,
             "name" to name,
             "note" to note,
             "purchaseDate" to purchaseDate,

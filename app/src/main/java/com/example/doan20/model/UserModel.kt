@@ -7,6 +7,7 @@ data class UserModel(
     val role: String = "user",
     val roomName: String = "Phòng cá nhân",
     var userCode: String = "",
+    var esp32Id: String = "",
     var deviceCount: Int = 0,
     val createdAt: Any? = null
 ) {
