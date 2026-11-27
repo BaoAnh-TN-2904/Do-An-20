@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App & Navigation -->
+    <string name="app_name">Gọn Phòng</string>
+    <string name="nav_home">Trang chủ</string>
+    <string name="nav_items">Vật dụng</string>
+    <string name="nav_statistics">Thống kê</string>
+    <string name="nav_profile">Cá nhân</string>
+    <string name="nav_admin">Quản trị</string>
+
+    <!-- Home Screen -->
+    <string name="greeting_title">Xin chào!</string>
+    <string name="greeting_subtitle">Phòng gọn gàng, mọi thứ trong tầm tay.</string>
+    <string name="stat_total">Tổng vật dụng</string>
+    <string name="stat_active">Hoạt động</string>
+    <string name="stat_broken">Hỏng</string>
+    <string name="section_recent_items">Vật dụng gần đây</string>
+    <string name="room_of_you">Phòng của bạn</string>
+    <string name="action_see_all">Xem tất cả vật dụng</string>
+    <string name="action_add_item">+  Thêm vật dụng</string>
+
+    <!-- Items Screen -->
+    <string name="items_screen_title">Vật dụng</string>
+    <string name="search_hint">Tìm tên vật dụng...</string>
+    <string name="filter_all">Tất cả</string>
+    <string name="filter_active">Hoạt động</string>
+    <string name="filter_broken">Hỏng</string>
+    <string name="empty_items_title">Không tìm thấy vật dụng phù hợp</string>
+    <string name="empty_items_subtitle">Hãy thử tìm với từ khóa khác hoặc xóa bộ lọc.</string>
+    <string name="action_reset_filter">Đặt lại bộ lọc</string>
+
+    <!-- Item Status & Categories -->
+    <string name="status_active_text">Hoạt động</string>
+    <string name="status_broken_text">Hỏng</string>
+    <string name="category_furniture">Nội thất</string>
+    <string name="category_electronics">Điện tử</string>
+    <string name="category_personal">Đồ dùng cá nhân</string>
+    <string name="category_other">Khác</string>
+
+    <!-- Add & Edit Item Screen -->
+    <string name="add_item_title">Thêm vật dụng</string>
+    <string name="edit_item_title">Sửa vật dụng</string>
+    <string name="image_picker_prompt">Thêm ảnh vật dụng</string>
+    <string name="image_picker_edit_prompt">Thay đổi ảnh</string>
+    <string name="image_picker_hint">Chọn ảnh từ thư viện</string>
+    <string name="label_item_name">Tên vật dụng</string>
+    <string name="hint_item_name">Nhập tên vật dụng</string>
+    <string name="label_category">Loại vật dụng</string>
+    <string name="hint_category">Chọn loại vật dụng</string>
+    <string name="label_gpio_config">Cấu hình chân / Giao tiếp (GPIO, ADC, SPI...)</string>
+    <string name="label_pin_type">Loại chân</string>
+    <string name="hint_pin_type">Nhập loại chân</string>
+    <string name="label_pin_number">GPIO</string>
+    <string name="hint_pin_number">Nhập số chân</string>
+    <string name="label_price">Giá mua</string>
+    <string name="hint_price">0đ</string>
+    <string name="label_buy_date">Ngày mua</string>
+    <string name="hint_buy_date">dd/mm/yyyy</string>
+    <string name="label_status">Trạng thái</string>
+    <string name="hint_status">Chọn trạng thái</string>
+    <string name="label_notes">Ghi chú</string>
+    <string name="hint_notes">Thêm ghi chú về vật dụng...</string>
+    <string name="action_save_item">Lưu vật dụng</string>
+    <string name="action_save_changes">Lưu thay đổi</string>
+    <string name="action_cancel">Hủy</string>
+    <string name="error_name_required">Vui lòng nhập tên vật dụng</string>
+    <string name="msg_item_saved">Đã lưu vật dụng thành công!</string>
+    <string name="msg_item_updated">Đã cập nhật thay đổi!</string>
+
+    <!-- Detail Screen -->
+    <string name="detail_title">Chi tiết vật dụng</string>
+    <string name="action_edit">Sửa</string>
+    <string name="action_delete">Xóa</string>
+    <string name="dialog_delete_title">Bạn có chắc muốn xóa vật dụng này?</string>
+    <string name="dialog_delete_message">%1$s sẽ bị xóa khỏi danh sách. Bạn không thể hoàn tác thao tác này.</string>
+    <string name="dialog_confirm_delete">Xóa</string>
+    <string name="msg_item_deleted">Đã xóa vật dụng</string>
+
+    <!-- Filter Screen -->
+    <string name="filter_title">Bộ lọc</string>
+    <string name="filter_subtitle">Tìm đúng vật dụng theo loại và tình trạng bạn cần.</string>
+    <string name="filter_type_header">Loại</string>
+    <string name="filter_status_header">Trạng thái</string>
+    <string name="filter_tip">Chỉ hiển thị vật dụng phù hợp với lựa chọn của bạn.</string>
+    <string name="action_apply_filter">Áp dụng</string>
+
+    <!-- Statistics Screen -->
+    <string name="statistics_title">Thống kê</string>
+    <string name="statistics_subtitle">Hiểu rõ vật dụng trong phòng của bạn.</string>
+    <string name="stats_condition_title">Tình trạng vật dụng</string>
+    <string name="stats_breakdown_title">Phân bổ theo loại</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_title">Cá nhân</string>
+    <string name="profile_name">Người dùng</string>
+    <string name="profile_email">Chưa đăng nhập</string>
+    <string name="section_account_settings">Tài khoản &amp; cài đặt</string>
+    <string name="settings_edit_info">Chỉnh sửa thông tin</string>
+    <string name="settings_edit_info_sub">Tên, email và ảnh đại diện</string>
+    <string name="settings_notifications">Cài đặt thông báo</string>
+    <string name="settings_notifications_sub">Nhắc nhở về vật dụng của bạn</string>
+    <string name="settings_theme">Giao diện</string>
+    <string name="settings_theme_sub">Chế độ sáng</string>
+    <string name="room_memory_title">Một căn phòng, nhiều kỷ niệm</string>
+    <string name="room_memory_sub">%1$d vật dụng đang được lưu giữ</string>
+    <string name="action_logout">Đăng xuất</string>
+    <string name="app_version">Gọn Phòng · Phiên bản 1.0.0</string>
+
+    <!-- Admin Screens -->
+    <string name="admin_role_badge">Quản trị</string>
+    <string name="admin_overview_title">Tổng quan admin</string>
+    <string name="admin_overview_subtitle">Người dùng và thiết bị trong tầm tay.</string>
+    <string name="admin_total_users">Tổng người dùng</string>
+    <string name="admin_total_devices">Tổng thiết bị</string>
+    <string name="admin_devices_status_summary">Tất cả thiết bị</string>
+    <string name="admin_search_users_hint">Tìm tên hoặc mã người dùng...</string>
+    <string name="admin_users_header">Người dùng</string>
+    <string name="admin_user_devices_count">%1$d thiết bị</string>
+    <string name="admin_mock_data_notice">Hệ thống Quản trị · Đồng bộ Firebase</string>
+    <string name="admin_detail_user_title">Chi tiết người dùng</string>
+    <string name="admin_detail_device_title">Chi tiết thiết bị</string>
+    <string name="admin_owner_header">Chủ sở hữu</string>
+    <string name="admin_owner_format">%1$s · %2$d thiết bị</string>
+    <string name="admin_prev_page">Trang trước</string>
+    <string name="admin_next_page">Trang sau</string>
+
+    <!-- Accessibility descriptions -->
+    <string name="cd_home_logo">Logo ứng dụng Gọn Phòng</string>
+    <string name="cd_notifications">Thông báo</string>
+    <string name="cd_search">Tìm kiếm</string>
+    <string name="cd_clear_search">Xóa tìm kiếm</string>
+    <string name="cd_item_image">Ảnh vật dụng</string>
+    <string name="cd_switch">Công tắc thiết bị</string>
+    <string name="cd_back">Quay lại</string>
+
+    <!-- Notifications Sheet -->
+    <string name="notifications_title">Thông báo</string>
+    <string name="action_close">Đóng</string>
+    <string name="notif_1_title">Đèn bàn bị hỏng</string>
+    <string name="notif_1_time">10 phút trước</string>
+    <string name="notif_1_desc">Đèn bàn trong phòng không sáng, cần kiểm tra bóng hoặc thay dây nguồn.</string>
+    <string name="notif_2_title">Quạt điện đang bật</string>
+    <string name="notif_2_time">30 phút trước</string>
+    <string name="notif_2_desc">Quạt điện đang ở trạng thái BẬT qua bộ điều khiển thông minh ESP32.</string>
+</resources>

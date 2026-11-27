@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "57905440362",
+    "project_id": "ptud-291c1",
+    "storage_bucket": "ptud-291c1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:57905440362:android:c197ad65679c2dddbccc13",
+        "android_client_info": {
+          "package_name": "com.example.ptud_btn_ck"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbWeYR9CG7b97Gnpy5aMXpHi_sAQpyYRc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

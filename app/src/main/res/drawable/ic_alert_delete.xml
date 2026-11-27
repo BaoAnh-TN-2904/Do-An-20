@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="56dp"
+    android:height="56dp"
+    android:viewportWidth="104"
+    android:viewportHeight="104">
+    <!-- Soft Red Rounded Background -->
+    <path
+        android:fillColor="#FFF0F0"
+        android:pathData="M16,0 L88,0 A16,16 0 0,1 104,16 L104,88 A16,16 0 0,1 88,104 L16,104 A16,16 0 0,1 0,88 L0,16 A16,16 0 0,1 16,0 Z" />
+    <!-- Trash Icon -->
+    <path
+        android:strokeColor="#D44242"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M47.83,49.92 V62.42 M56.17,49.92 V62.42 M66.58,39.5 V68.67 A4.17,4.17 0 0,1 62.42,72.84 H41.58 A4.17,4.17 0 0,1 37.42,68.67 V39.5 M33.25,39.5 H70.75 M43.67,39.5 V35.33 A4.17,4.17 0 0,1 47.83,31.17 H56.17 A4.17,4.17 0 0,1 60.33,35.33 V39.5" />
+</vector>
