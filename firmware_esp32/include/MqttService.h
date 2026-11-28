@@ -38,8 +38,8 @@ public:
         m_onCommandReceived = callback;
     }
 
-    // Đăng ký callback khi MQTT vừa kết nối thành công
-    void setOnConnectedCallback(const std::function<void()>& callback) {
+    // Đăng ký callback khi MQTT vừa kết nối thành công (sau khi nhận gói chờ từ Broker)
+    void setOnConnectedCallback(const std::function<void(bool isFirstBoot)>& callback) {
         m_onConnected = callback;
     }
 
@@ -56,7 +56,9 @@ private:
     String m_topicRoot;
     String m_deviceCode;
     unsigned long m_lastRetryTime;
+    unsigned long m_connectedAt;
+    bool m_pendingInitialSync;
 
     std::function<void(const IncomingCommand&)> m_onCommandReceived;
-    std::function<void()> m_onConnected;
+    std::function<void(bool isFirstBoot)> m_onConnected;
 };

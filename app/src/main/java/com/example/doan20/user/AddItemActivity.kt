@@ -39,7 +39,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.Calendar
@@ -422,6 +421,8 @@ class AddItemActivity : AppCompatActivity() {
         val existing = editingDevice
         val docId = existing?.id ?: UUID.randomUUID().toString()
         val ownerId = existing?.userId?.ifBlank { targetUserId } ?: targetUserId
+        val isElectronic = DeviceModel.toFirestoreCategory(categoryDisplay) == "electronics"
+        val initialProvStatus = if (isElectronic && gpioPin > 0L) "PENDING" else "NONE"
 
         val device = DeviceModel(
             id = docId,
@@ -437,16 +438,24 @@ class AddItemActivity : AppCompatActivity() {
             status = status,
             createdAt = existing?.createdAt?.ifBlank { System.currentTimeMillis().toString() }
                 ?: System.currentTimeMillis().toString(),
-            isOn = existing?.isOn ?: false
+            isOn = existing?.isOn ?: false,
+            provisionStatus = initialProvStatus,
+            provisionMessage = ""
         )
 
         binding.btnSaveItem.isEnabled = false
         db.collection("devices").document(docId)
             .set(device.toFirestoreMap())
             .addOnSuccessListener {
+                // Cập nhật editingDevice để nếu user chọn lại chân khác không bị tạo trùng document mới
+                editingDevice = device
+                editingDeviceId = docId
+
                 val mqttTargetId = MqttManager.resolveTargetId(targetEsp32Id, ownerId)
                 // Nếu trước đó có gán GPIO nhưng nay bỏ GPIO hoặc đổi sang loại không phải Điện tử -> giải phóng chân trên ESP32
                 if (existing != null && existing.gpioPin > 0L && (!device.isElectronic() || gpioPin <= 0L) && mqttTargetId.isNotBlank()) {
+                    MqttManager.publish(MqttManager.provisionTopic(mqttTargetId, docId), "", retain = true)
+                    MqttManager.publish(MqttManager.ackTopic(mqttTargetId, docId), "", retain = true)
                     MqttManager.publish(
                         MqttManager.removeTopic(mqttTargetId, docId),
                         MqttManager.buildRemovePayload(docId, existing.gpioPin.toInt())
@@ -511,73 +520,69 @@ class AddItemActivity : AppCompatActivity() {
 
         dialog.show()
 
-        MqttManager.subscribe(
-            topic = ackTopic,
-            onSubscribed = {
-                MqttManager.publish(
-                    MqttManager.provisionTopic(ownerId, deviceId),
-                    MqttManager.buildProvisionPayload(deviceId, deviceName, gpioPin)
-                )
-            }
-        ) { _, payload ->
-            runOnUiThread {
-                if (isFinishing || isDestroyed || !dialog.isShowing || isAckReceived) return@runOnUiThread
-                isAckReceived = true
-                cleanupAck()
-                pbLoading.visibility = View.GONE
+        val provTopic = MqttManager.provisionTopic(ownerId, deviceId)
+        val provPayload = MqttManager.buildProvisionPayload(deviceId, deviceName, gpioPin)
 
-                var isSuccess = true
-                var failMessage = ""
-                try {
-                    val json = JSONObject(payload)
-                    val status = json.optString("status", "READY")
-                    val reason = json.optString("reason", "")
-                    val msg = json.optString("message", "")
-                    if (status.equals("FAILED", ignoreCase = true) || status.equals("FULL", ignoreCase = true)) {
-                        isSuccess = false
-                        failMessage = if (msg.isNotBlank()) msg else when (reason) {
-                            "GPIO_FULL" -> "ESP32 đã sử dụng hết các chân GPIO vật lý khả dụng!"
-                            "PIN_OCCUPIED" -> "Chân GPIO $gpioPin đã được vật dụng khác sử dụng trên ESP32!"
-                            "INVALID_PIN" -> "Chân GPIO $gpioPin không hợp lệ để làm cổng điều khiển!"
-                            else -> "Không thể khởi tạo chân GPIO $gpioPin trên ESP32."
-                        }
-                    }
-                } catch (_: Exception) {
-                    if (payload.contains("FAILED") || payload.contains("FULL")) {
-                        isSuccess = false
-                        failMessage = "ESP32 không thể khởi tạo chân GPIO $gpioPin."
-                    }
+        // Xóa ACK cũ (nếu có) trước khi đăng ký nhận ACK mới và gửi lệnh provision dạng retain=true
+        MqttManager.publish(ackTopic, "", retain = true, onSuccess = {
+            MqttManager.subscribe(
+                topic = ackTopic,
+                onSubscribed = {
+                    MqttManager.publish(provTopic, provPayload, retain = true)
                 }
+            ) { _, payload ->
+                val ack = MqttManager.parseProvisionAck(payload, expectedGpio = gpioPin) ?: return@subscribe
+                runOnUiThread {
+                    if (isFinishing || isDestroyed || !dialog.isShowing || isAckReceived) return@runOnUiThread
+                    isAckReceived = true
+                    cleanupAck()
+                    pbLoading.visibility = View.GONE
 
-                if (isSuccess) {
-                    ivWarning.visibility = View.GONE
-                    ivError.visibility = View.GONE
-                    ivSuccess.visibility = View.VISIBLE
-                    tvTitle.text = "ESP32 đã sẵn sàng!"
-                    tvMessage.text = "Chân GPIO $gpioPin đã được vi điều khiển ESP32 khởi tạo thành công làm cổng điều khiển (Relay)!"
-                    btnAction.text = "Hoàn tất"
+                    val provStatus = if (ack.isSuccess) "READY" else "FAILED"
+                    val provMsg = if (ack.isSuccess) "" else ack.message
+                    editingDevice = editingDevice?.copy(provisionStatus = provStatus, provisionMessage = provMsg)
+                    db.collection("devices").document(deviceId).update(
+                        mapOf(
+                            "provisionStatus" to provStatus,
+                            "provisionMessage" to provMsg
+                        )
+                    )
+                    MqttManager.publish(provTopic, "", retain = true)
+                    MqttManager.publish(ackTopic, "", retain = true)
 
-                    mainHandler.postDelayed({
-                        if (!isFinishing && !isDestroyed && dialog.isShowing) {
+                    if (ack.isSuccess) {
+                        ivWarning.visibility = View.GONE
+                        ivError.visibility = View.GONE
+                        ivSuccess.visibility = View.VISIBLE
+                        tvTitle.text = "ESP32 đã sẵn sàng!"
+                        tvMessage.text = "Chân GPIO $gpioPin đã được vi điều khiển ESP32 khởi tạo thành công làm cổng điều khiển (Relay)!"
+                        btnAction.text = "Hoàn tất"
+
+                        mainHandler.postDelayed({
+                            if (!isFinishing && !isDestroyed && dialog.isShowing) {
+                                dialog.dismiss()
+                                finish()
+                            }
+                        }, 1800)
+                    } else {
+                        binding.btnSaveItem.isEnabled = true
+                        ivSuccess.visibility = View.GONE
+                        ivWarning.visibility = View.GONE
+                        ivError.visibility = View.VISIBLE
+                        tvTitle.text = "Khởi tạo thất bại: Chân GPIO không khả dụng"
+                        tvMessage.text = "${ack.message}\n\nVui lòng chọn một chân GPIO khác còn trống."
+                        btnAction.text = "Chọn chân khác"
+                        btnAction.setOnClickListener {
                             dialog.dismiss()
-                            finish()
+                            binding.etPinNumber.requestFocus()
                         }
-                    }, 1800)
-                } else {
-                    binding.btnSaveItem.isEnabled = true
-                    ivSuccess.visibility = View.GONE
-                    ivWarning.visibility = View.GONE
-                    ivError.visibility = View.VISIBLE
-                    tvTitle.text = "Khởi tạo thất bại: Chân GPIO không khả dụng"
-                    tvMessage.text = "$failMessage\n\nVui lòng chọn một chân GPIO khác còn trống."
-                    btnAction.text = "Chọn chân khác"
-                    btnAction.setOnClickListener {
-                        dialog.dismiss()
-                        binding.etPinNumber.requestFocus()
                     }
                 }
             }
-        }
+        }, onError = {
+            // Nếu chưa kết nối mạng/MQTT thì vẫn publish để client tự queue/connect
+            MqttManager.publish(provTopic, provPayload, retain = true)
+        })
 
         mainHandler.postDelayed({
             if (!isFinishing && !isDestroyed && !isAckReceived && dialog.isShowing) {
@@ -586,7 +591,7 @@ class AddItemActivity : AppCompatActivity() {
                 ivSuccess.visibility = View.GONE
                 ivWarning.visibility = View.VISIBLE
                 tvTitle.text = "Chưa nhận phản hồi từ ESP32"
-                tvMessage.text = "Vật dụng đã được lưu vào hệ thống. Vi điều khiển ESP32 sẽ tự động cấu hình chân GPIO $gpioPin khi kết nối."
+                tvMessage.text = "Vật dụng đã được lưu. ESP32 sẽ tự động kiểm tra chân GPIO $gpioPin ngay khi online (nếu lỗi sẽ báo trong mục Thông báo)."
                 btnAction.text = "Tôi đã hiểu"
             }
         }, 4500)

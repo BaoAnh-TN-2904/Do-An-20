@@ -6,7 +6,9 @@ MqttService::MqttService()
       m_broker(nullptr),
       m_port(1883),
       m_topicRoot("doan20"),
-      m_lastRetryTime(0) {}
+      m_lastRetryTime(0),
+      m_connectedAt(0),
+      m_pendingInitialSync(false) {}
 
 void MqttService::ensureDeviceCode() {
     if (m_deviceCode.length() > 0) return;
@@ -35,6 +37,8 @@ void MqttService::setup(const char* broker, int port, const char* topicRoot) {
 
     m_mqttClient.setServer(m_broker, m_port);
     m_mqttClient.setBufferSize(512);
+    m_mqttClient.setKeepAlive(10);      // Phát hiện đứt kết nối nhanh hơn (10s)
+    m_mqttClient.setSocketTimeout(5);   // Tránh treo socket quá lâu (5s)
 
     // Dùng lambda để chuyển tiếp callback vào phương thức của đối tượng
     m_mqttClient.setCallback([this](char* topic, byte* payload, unsigned int length) {
@@ -58,7 +62,8 @@ void MqttService::connectNonBlocking() {
     String clientId = "ESP32_DoAn20_" + m_deviceCode;
     Serial.printf("[MqttService] Đang kết nối %s:%d ... ", m_broker, m_port);
 
-    if (m_mqttClient.connect(clientId.c_str())) {
+    // Dùng cleanSession = false để Broker giữ các lệnh QoS 1 từ App khi ESP32 tạm mất mạng
+    if (m_mqttClient.connect(clientId.c_str(), nullptr, nullptr, nullptr, 0, false, nullptr, false)) {
         Serial.println("Thành công!");
         Serial.println("=======================================================");
         Serial.printf("  MA ESP32 (6 KY TU CUOI MAC): %s\n", m_deviceCode.c_str());
@@ -79,19 +84,39 @@ void MqttService::connectNonBlocking() {
         Serial.printf("[MqttService] Đã Subscribe:\n  -> %s\n  -> %s\n  -> %s\n",
                       switchTopic.c_str(), provTopic.c_str(), removeTopic.c_str());
 
-        if (m_onConnected) {
-            m_onConnected();
-        }
+        m_connectedAt = millis();
+        m_pendingInitialSync = true;
     } else {
         Serial.printf("Thất bại (rc=%d), thử lại sau.\n", m_mqttClient.state());
     }
 }
 
 void MqttService::loop() {
+    if (WiFi.status() != WL_CONNECTED) {
+        if (m_mqttClient.connected()) {
+            Serial.println("[MqttService] WiFi mất kết nối -> đóng socket MQTT cũ.");
+            m_mqttClient.disconnect();
+        }
+        m_pendingInitialSync = false;
+        return;
+    }
+
     if (!m_mqttClient.connected()) {
+        m_pendingInitialSync = false;
         connectNonBlocking();
     } else {
         m_mqttClient.loop();
+
+        // Đợi ~1.2s sau khi kết nối để nhận hết gói QoS 1/retained từ App trước khi đồng bộ trạng thái
+        static bool firstBootSyncDone = false;
+        if (m_pendingInitialSync && (millis() - m_connectedAt >= 1200)) {
+            m_pendingInitialSync = false;
+            bool isFirstBoot = !firstBootSyncDone;
+            firstBootSyncDone = true;
+            if (m_onConnected) {
+                m_onConnected(isFirstBoot);
+            }
+        }
     }
 }
 
@@ -136,11 +161,15 @@ void MqttService::publishAck(const String& id, int gpio, const char* status, con
     char buffer[256];
     serializeJson(doc, buffer);
 
-    m_mqttClient.publish(topic.c_str(), buffer);
+    bool retainAck = (strcmp(status, "READY") == 0 || strcmp(status, "FAILED") == 0 || strcmp(status, "FULL") == 0);
+    m_mqttClient.publish(topic.c_str(), buffer, retainAck);
     Serial.printf("[MqttService] Publish ACK: %s -> %s\n", topic.c_str(), buffer);
 }
 
 void MqttService::handleMqttPayload(char* topic, byte* payload, unsigned int length) {
+    // Bỏ qua bản tin rỗng (khi App xóa retained message trên Broker)
+    if (length == 0) return;
+
     char payloadStr[512];
     if (length >= sizeof(payloadStr)) length = sizeof(payloadStr) - 1;
     memcpy(payloadStr, payload, length);

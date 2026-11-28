@@ -28,11 +28,14 @@ void setup() {
     // 3. Khởi tạo MQTT Service (tự động dùng mã MAC/Chip ID của ESP32)
     mqttService.setup(Config::MQTT_BROKER, Config::MQTT_PORT, Config::TOPIC_ROOT);
 
-    // 4. Đăng ký sự kiện: Khi MQTT kết nối lại -> gửi trạng thái hiện tại của toàn bộ thiết bị lên App
-    mqttService.setOnConnectedCallback([]() {
-        const auto& devices = deviceManager.getDevices();
-        for (const auto& dev : devices) {
-            mqttService.publishState(dev);
+    // 4. Đăng ký sự kiện: Sau khi MQTT kết nối & nhận hết gói chờ -> chỉ gửi trạng thái các thiết bị cần đồng bộ
+    mqttService.setOnConnectedCallback([](bool isFirstBoot) {
+        auto& devices = const_cast<std::vector<Device>&>(deviceManager.getDevices());
+        for (auto& dev : devices) {
+            if (isFirstBoot || dev.isPendingSync()) {
+                mqttService.publishState(dev);
+                dev.setPendingSync(false);
+            }
         }
     });
 
@@ -41,7 +44,12 @@ void setup() {
         Serial.printf("\n[SỰ KIỆN] Nút vật lý nhấn -> '%s' (GPIO %d) = %s\n",
                       dev.getId().c_str(), dev.getRelayPin(), dev.getState() ? "BẬT" : "TẮT");
         deviceManager.saveAllDevices();
-        mqttService.publishState(dev); // Gửi ngay lên App để gạt switch
+        if (mqttService.isConnected()) {
+            dev.setPendingSync(false);
+            mqttService.publishState(dev); // Gửi ngay lên App để gạt switch
+        } else {
+            dev.setPendingSync(true); // Đánh dấu để gửi lên App ngay khi có mạng lại
+        }
     });
 
     // 6. Đăng ký sự kiện: Khi NHẬN LỆNH TỪ APP ANDROID gửi xuống
@@ -82,6 +90,7 @@ void setup() {
             Device* dev = deviceManager.provisionDevice(cmd.deviceId, cmd.targetGpio);
             if (dev != nullptr) {
                 dev->setState(cmd.targetState);
+                dev->setPendingSync(false);
                 deviceManager.saveAllDevices();
                 mqttService.publishState(*dev);
                 Serial.printf("[LỆNH SWITCH] '%s' trên GPIO %d -> %s\n",

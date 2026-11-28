@@ -1,5 +1,6 @@
 package com.example.doan20.user
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -36,13 +37,15 @@ class NotificationsBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun populateNotifications() {
-        val items = (activity as? MainActivity)?.deviceList ?: emptyList()
+        val main = activity as? MainActivity
+        val items = main?.deviceList ?: emptyList()
         binding.layoutNotificationsContainer.removeAllViews()
 
+        val provisionFailedItems = items.filter { it.isElectronic() && it.isProvisionFailed() }
         val brokenItems = items.filter { it.isBroken() }
         val turnedOnItems = items.filter { it.isOn && it.isElectronic() }
 
-        if (items.isEmpty() || (brokenItems.isEmpty() && turnedOnItems.isEmpty())) {
+        if (items.isEmpty() || (provisionFailedItems.isEmpty() && brokenItems.isEmpty() && turnedOnItems.isEmpty())) {
             binding.layoutEmptyNotifications.visibility = View.VISIBLE
             binding.layoutNotificationsContainer.visibility = View.GONE
             return
@@ -50,6 +53,28 @@ class NotificationsBottomSheet : BottomSheetDialogFragment() {
 
         binding.layoutEmptyNotifications.visibility = View.GONE
         binding.layoutNotificationsContainer.visibility = View.VISIBLE
+
+        for (device in provisionFailedItems) {
+            val gpioLabel = if (device.gpioPin > 0) "GPIO ${device.gpioPin}" else "Lỗi GPIO"
+            val desc = device.provisionMessage.ifBlank {
+                "Không thể khởi tạo chân $gpioLabel trên ESP32. Chạm để đổi chân GPIO khác."
+            }
+            addNotificationCard(
+                title = "Khởi tạo ESP32 thất bại: ${device.name}",
+                time = gpioLabel,
+                desc = "$desc\n(Chạm để sửa chân GPIO)",
+                isBroken = true,
+                onClick = {
+                    dismiss()
+                    val intent = Intent(requireContext(), AddItemActivity::class.java).apply {
+                        putExtra("DEVICE_ID", device.id)
+                        putExtra("USER_ID", main?.currentUser?.uid.orEmpty())
+                        putExtra("ESP32_ID", main?.currentUser?.esp32Id.orEmpty())
+                    }
+                    startActivity(intent)
+                }
+            )
+        }
 
         for (device in brokenItems) {
             val dateText = UiHelper.parseDateToDisplay(device.purchaseDate)
@@ -72,7 +97,13 @@ class NotificationsBottomSheet : BottomSheetDialogFragment() {
         }
     }
 
-    private fun addNotificationCard(title: String, time: String, desc: String, isBroken: Boolean) {
+    private fun addNotificationCard(
+        title: String,
+        time: String,
+        desc: String,
+        isBroken: Boolean,
+        onClick: (() -> Unit)? = null
+    ) {
         val card = MaterialCardView(requireContext()).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -89,6 +120,11 @@ class NotificationsBottomSheet : BottomSheetDialogFragment() {
                     if (isBroken) R.color.stat_broken_bg else R.color.stat_total_bg
                 )
             )
+            if (onClick != null) {
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { onClick() }
+            }
         }
 
         val root = LinearLayout(requireContext()).apply {

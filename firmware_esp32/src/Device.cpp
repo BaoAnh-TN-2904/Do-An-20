@@ -6,6 +6,7 @@ Device::Device(const String& id, int relayPin, int buttonPin, bool activeLow)
       m_buttonPin(buttonPin),
       m_activeLow(activeLow),
       m_state(false),
+      m_pendingSync(false),
       m_lastReading(HIGH),
       m_stableState(HIGH),
       m_lastDebounceTime(0) {}

@@ -18,6 +18,8 @@ public:
     void setState(bool newState);
     void toggleState();
     bool getState() const { return m_state; }
+    void setPendingSync(bool pending) { m_pendingSync = pending; }
+    bool isPendingSync() const { return m_pendingSync; }
 
     // Quản lý chân GPIO
     void setRelayPin(int pin);
@@ -40,6 +42,7 @@ private:
     int m_buttonPin;
     bool m_activeLow;
     bool m_state;
+    bool m_pendingSync;
 
     // Biến giám sát chống dội phím (debounce)
     int m_lastReading;

@@ -191,10 +191,13 @@ class MainActivity : AppCompatActivity() {
         if (targetId.isBlank() || targetId == activeMqttTargetId) return
         if (activeMqttTargetId.isNotBlank()) {
             MqttManager.unsubscribe(MqttManager.stateWildcardTopic(activeMqttTargetId))
+            MqttManager.unsubscribe(MqttManager.ackWildcardTopic(activeMqttTargetId))
         }
         activeMqttTargetId = targetId
         MqttManager.connect(clientIdPrefix = uid)
+
         MqttManager.subscribe(MqttManager.stateWildcardTopic(targetId)) { topic, payload ->
+            if (payload.isBlank()) return@subscribe
             val parts = topic.split("/")
             if (parts.size >= 5) {
                 val deviceId = parts[3]
@@ -205,6 +208,45 @@ class MainActivity : AppCompatActivity() {
                         target.isOn = isOn
                         notifyAllTabsUpdated()
                         db.collection("devices").document(deviceId).update("isOn", isOn)
+                    }
+                }
+            }
+        }
+
+        // Lắng nghe ACK từ ESP32 (kể cả khi ESP32 vừa online trở lại sau khi thêm thiết bị)
+        MqttManager.subscribe(MqttManager.ackWildcardTopic(targetId)) { topic, payload ->
+            val ack = MqttManager.parseProvisionAck(payload) ?: return@subscribe
+            if (ack.status.equals("REMOVED", ignoreCase = true)) return@subscribe
+            val parts = topic.split("/")
+            if (parts.size >= 5) {
+                val deviceId = parts[3]
+                val newStatus = if (ack.isSuccess) "READY" else "FAILED"
+                val newMsg = if (ack.isSuccess) "" else ack.message
+
+                runOnUiThread {
+                    val target = deviceList.find { it.id == deviceId }
+                    if (target != null) {
+                        target.provisionStatus = newStatus
+                        target.provisionMessage = newMsg
+                        notifyAllTabsUpdated()
+                    }
+                    db.collection("devices").document(deviceId).update(
+                        mapOf(
+                            "provisionStatus" to newStatus,
+                            "provisionMessage" to newMsg
+                        )
+                    )
+                    // Xóa retained /provision và /ack sau khi đã ghi nhận kết quả
+                    MqttManager.publish(MqttManager.provisionTopic(targetId, deviceId), "", retain = true)
+                    MqttManager.publish(MqttManager.ackTopic(targetId, deviceId), "", retain = true)
+
+                    if (!ack.isSuccess && lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) {
+                        val name = target?.name ?: "GPIO ${ack.gpio}"
+                        Toast.makeText(
+                            this,
+                            "ESP32 khởi tạo thất bại ($name): ${ack.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             }

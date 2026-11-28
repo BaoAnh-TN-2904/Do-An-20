@@ -4,6 +4,7 @@ import android.util.Log
 import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.MqttGlobalPublishFilter
+import com.hivemq.client.mqtt.datatypes.MqttQos
 import com.hivemq.client.mqtt.datatypes.MqttTopic
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter
 import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient
@@ -42,10 +43,69 @@ object MqttManager {
     }
 
     fun stateWildcardTopic(targetId: String) = "doan20/$targetId/device/+/state"
+    fun ackWildcardTopic(targetId: String) = "doan20/$targetId/device/+/ack"
     fun switchTopic(targetId: String, deviceId: String) = "doan20/$targetId/device/$deviceId/switch"
     fun provisionTopic(targetId: String, deviceId: String) = "doan20/$targetId/device/$deviceId/provision"
     fun removeTopic(targetId: String, deviceId: String) = "doan20/$targetId/device/$deviceId/remove"
     fun ackTopic(targetId: String, deviceId: String) = "doan20/$targetId/device/$deviceId/ack"
+
+    data class ProvisionAckResult(
+        val isSuccess: Boolean,
+        val status: String,
+        val gpio: Int,
+        val reason: String,
+        val message: String
+    )
+
+    fun parseProvisionAck(payload: String, expectedGpio: Int? = null): ProvisionAckResult? {
+        val trimmed = payload.trim()
+        if (trimmed.isEmpty()) return null
+
+        var status = "READY"
+        var reason = ""
+        var msg = ""
+        var gpio = -1
+        var isSuccess = true
+
+        try {
+            val json = JSONObject(trimmed)
+            status = json.optString("status", "READY")
+            reason = json.optString("reason", "")
+            msg = json.optString("message", "")
+            gpio = json.optInt("gpio", -1)
+
+            if (expectedGpio != null && gpio > 0 && gpio != expectedGpio) {
+                return null
+            }
+
+            if (status.equals("FAILED", ignoreCase = true) || status.equals("FULL", ignoreCase = true)) {
+                isSuccess = false
+                if (msg.isBlank()) {
+                    val gpioLabel = if (gpio > 0) "GPIO $gpio" else "GPIO"
+                    msg = when (reason) {
+                        "GPIO_FULL" -> "ESP32 đã sử dụng hết các chân GPIO vật lý khả dụng!"
+                        "PIN_OCCUPIED" -> "Chân $gpioLabel đã được vật dụng khác sử dụng trên ESP32!"
+                        "INVALID_PIN" -> "Chân $gpioLabel không hợp lệ để làm cổng điều khiển!"
+                        else -> "Không thể khởi tạo chân $gpioLabel trên ESP32."
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            if (trimmed.contains("FAILED") || trimmed.contains("FULL")) {
+                isSuccess = false
+                status = "FAILED"
+                msg = "ESP32 không thể khởi tạo chân GPIO."
+            }
+        }
+
+        return ProvisionAckResult(
+            isSuccess = isSuccess,
+            status = status,
+            gpio = gpio,
+            reason = reason,
+            message = msg
+        )
+    }
 
     fun buildSwitchPayload(deviceId: String, isOn: Boolean, gpioPin: Int): String {
         return JSONObject().apply {
@@ -232,6 +292,7 @@ object MqttManager {
     fun publish(
         topic: String,
         payload: String,
+        retain: Boolean = false,
         onSuccess: (() -> Unit)? = null,
         onError: ((Throwable) -> Unit)? = null
     ) {
@@ -240,17 +301,18 @@ object MqttManager {
             val prefix = activeClientPrefix ?: "doan20"
             connect(
                 clientIdPrefix = prefix,
-                onConnected = { executePublish(topic, payload, onSuccess, onError) },
+                onConnected = { executePublish(topic, payload, retain, onSuccess, onError) },
                 onError = { onError?.invoke(it) }
             )
             return
         }
-        executePublish(topic, payload, onSuccess, onError)
+        executePublish(topic, payload, retain, onSuccess, onError)
     }
 
     private fun executePublish(
         topic: String,
         payload: String,
+        retain: Boolean,
         onSuccess: (() -> Unit)?,
         onError: ((Throwable) -> Unit)?
     ) {
@@ -259,6 +321,8 @@ object MqttManager {
                 Mqtt3Publish.builder()
                     .topic(topic)
                     .payload(payload.toByteArray(StandardCharsets.UTF_8))
+                    .qos(MqttQos.AT_LEAST_ONCE)
+                    .retain(retain)
                     .build()
             )?.whenComplete { _, throwable ->
                 if (throwable != null) {

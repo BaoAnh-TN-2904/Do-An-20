@@ -113,13 +113,15 @@ class HomeFragment : Fragment(), MainActivity.DataRefreshable {
         val total = items.size
         val active = items.count { !it.isBroken() }
         val broken = items.count { it.isBroken() }
+        val provisionFailed = items.count { it.isElectronic() && it.isProvisionFailed() }
 
         binding.tvStatTotalCount.text = total.toString()
         binding.tvStatActiveCount.text = active.toString()
         binding.tvStatBrokenCount.text = broken.toString()
 
         recentAdapter.updateData(items.take(4))
-        binding.viewNotifBadge.visibility = if (items.isNotEmpty() && broken > 0) View.VISIBLE else View.GONE
+        binding.viewNotifBadge.visibility =
+            if (items.isNotEmpty() && (broken > 0 || provisionFailed > 0)) View.VISIBLE else View.GONE
     }
 
     override fun onDestroyView() {

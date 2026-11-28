@@ -20,4 +20,5 @@ private:
     const char* m_ssid;
     const char* m_password;
     unsigned long m_lastReconnectAttempt;
+    bool m_wasConnected;
 };

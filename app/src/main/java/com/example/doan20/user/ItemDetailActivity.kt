@@ -165,6 +165,8 @@ class ItemDetailActivity : AppCompatActivity() {
             val ownerId = device.userId.ifBlank { userId }
             val mqttTargetId = MqttManager.resolveTargetId(esp32Id, ownerId)
             if (device.isElectronic() && device.gpioPin > 0L && mqttTargetId.isNotBlank()) {
+                MqttManager.publish(MqttManager.provisionTopic(mqttTargetId, device.id), "", retain = true)
+                MqttManager.publish(MqttManager.ackTopic(mqttTargetId, device.id), "", retain = true)
                 MqttManager.publish(
                     MqttManager.removeTopic(mqttTargetId, device.id),
                     MqttManager.buildRemovePayload(device.id, device.gpioPin.toInt())

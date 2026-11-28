@@ -16,8 +16,14 @@ data class DeviceModel(
     val purchasePrice: String = "0",
     var status: String = "active", // "active" (Hoạt động), "broken" (Hỏng)
     val createdAt: String = "",
-    var isOn: Boolean = false
+    var isOn: Boolean = false,
+    var provisionStatus: String = "NONE", // "NONE", "PENDING", "READY", "FAILED"
+    var provisionMessage: String = ""
 ) {
+    fun isProvisionFailed(): Boolean {
+        return provisionStatus.equals("FAILED", ignoreCase = true)
+    }
+
     fun isElectronic(): Boolean {
         val key = category.trim().lowercase()
         return key == "electronics" || key == "electronic" || key == "điện tử"
@@ -76,7 +82,9 @@ data class DeviceModel(
             "purchaseDate" to purchaseDate,
             "purchasePrice" to purchasePrice,
             "status" to status,
-            "userId" to userId
+            "userId" to userId,
+            "provisionStatus" to provisionStatus,
+            "provisionMessage" to provisionMessage
         )
     }
 
@@ -136,7 +144,9 @@ data class DeviceModel(
                 purchasePrice = priceStr,
                 status = doc.getString("status") ?: "active",
                 createdAt = createdAtStr,
-                isOn = isOnVal
+                isOn = isOnVal,
+                provisionStatus = doc.getString("provisionStatus") ?: "NONE",
+                provisionMessage = doc.getString("provisionMessage") ?: ""
             )
         }
     }
